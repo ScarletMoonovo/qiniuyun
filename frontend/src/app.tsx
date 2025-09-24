@@ -1,5 +1,6 @@
 import Footer from '@/components/Footer';
-import { getLoginUserUsingGet } from '@/services/origin-backend/userController';
+import { getUserInfo } from '@/services/backend/user';
+import { TokenManager } from '@/utils/token';
 import type { RunTimeLayoutConfig } from '@umijs/max';
 import { history } from '@umijs/max';
 import defaultSettings from '../config/defaultSettings';
@@ -15,17 +16,33 @@ export async function getInitialState(): Promise<InitialState> {
   const initialState: InitialState = {
     currentUser: undefined,
   };
-  // 如果不是登录页面，执行
+  
+  // 如果不是登录页面，且有 token，尝试获取用户信息
   const { location } = history;
   if (location.pathname !== loginPath) {
-    try {
-      const res = await getLoginUserUsingGet();
-      initialState.currentUser = res.data;
-    } catch (error: any) {
-      // 如果未登录
+    // 检查是否有 JWT token 和用户 ID
+    if (TokenManager.hasToken()) {
+      const userId = TokenManager.getUserId();
+      if (userId) {
+        try {
+          // 使用存储的用户 ID 获取用户信息
+          const res = await getUserInfo({ id: userId });
+          // 转换数据格式以兼容系统期望的 LoginUserVO 格式
+          initialState.currentUser = {
+            id: res.id?.toString(),
+            userName: res.name,
+            userAvatar: res.avatar,
+            // 其他字段根据需要映射
+          } as API.LoginUserVO;
+        } catch (error: any) {
+          // 如果获取用户信息失败（可能 token 过期），清理无效的 token
+          console.error('获取用户信息失败:', error);
+          TokenManager.clearTokens();
+        }
+      }
     }
 
-    // 模拟登录用户
+    // 模拟登录用户（开发时使用）
     // const mockUser: API.LoginUserVO = {
     //   userAvatar: 'https://gw.alipayobjects.com/zos/rmsportal/BiazfanxmamNRoxxVxka.png',
     //   userName: 'Moon',

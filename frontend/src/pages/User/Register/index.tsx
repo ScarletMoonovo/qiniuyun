@@ -1,7 +1,8 @@
 import Footer from '@/components/Footer';
-import { userRegisterUsingPost } from '@/services/origin-backend/userController';
-import { LockOutlined, UserOutlined } from '@ant-design/icons';
-import { LoginForm, ProFormText } from '@ant-design/pro-components';
+import { register, sendCaptcha } from '@/services/backend/user';
+import { TokenManager } from '@/utils/token';
+import { LockOutlined, MailOutlined, UserOutlined, SafetyOutlined } from '@ant-design/icons';
+import { LoginForm, ProFormText, ProFormCaptcha } from '@ant-design/pro-components';
 import { useEmotionCss } from '@ant-design/use-emotion-css';
 import { Helmet, history } from '@umijs/max';
 import { message, Tabs } from 'antd';
@@ -31,28 +32,51 @@ const UserRegisterPage: React.FC = () => {
    * 提交注册
    * @param values
    */
-  const handleSubmit = async (values: API.UserRegisterRequest) => {
-    // 前端校验
-    // 1. 判断密码是否一致
-    const { userPassword, checkPassword } = values;
-    if (userPassword !== checkPassword) {
-      message.error('二次输入的密码不一致');
-      return;
-    }
-
+  const handleSubmit = async (values: API.RegisterRequest) => {
     try {
       // 注册
-      await userRegisterUsingPost({
-        ...values,
+      const res = await register({
+        email: values.email,
+        captcha: values.captcha,
+        name: values.name,
+        password: values.password,
       });
 
       const defaultLoginSuccessMessage = '注册成功！';
       message.success(defaultLoginSuccessMessage);
-      history.push('/user/login');
+      
+      // 注册成功后直接存储 token（如果后端返回）
+      if (res.accessToken && res.refreshToken) {
+        TokenManager.setTokens(
+          res.accessToken,
+          res.refreshToken,
+          res.id
+        );
+        // 注册成功直接跳转到首页
+        history.push('/');
+      } else {
+        // 如果后端不返回 token，跳转到登录页
+        history.push('/user/login');
+      }
       return;
     } catch (error: any) {
       const defaultLoginFailureMessage = `注册失败，${error.message}`;
       message.error(defaultLoginFailureMessage);
+    }
+  };
+
+  /**
+   * 发送验证码
+   * @param email
+   */
+  const handleSendCaptcha = async (email: string) => {
+    try {
+      await sendCaptcha({ email });
+      message.success('验证码发送成功！');
+      return true;
+    } catch (error: any) {
+      message.error(`验证码发送失败：${error.message}`);
+      return false;
     }
   };
 
@@ -86,7 +110,7 @@ const UserRegisterPage: React.FC = () => {
             },
           }}
           onFinish={async (values) => {
-            await handleSubmit(values as API.UserLoginRequest);
+            await handleSubmit(values as API.RegisterRequest);
           }}
         >
           <Tabs
@@ -103,21 +127,75 @@ const UserRegisterPage: React.FC = () => {
           {type === 'account' && (
             <>
               <ProFormText
-                name="userAccount"
+                name="email"
+                fieldProps={{
+                  size: 'large',
+                  prefix: <MailOutlined />,
+                }}
+                placeholder={'请输入邮箱'}
+                rules={[
+                  {
+                    required: true,
+                    message: '邮箱是必填项！',
+                  },
+                  {
+                    type: 'email',
+                    message: '请输入正确的邮箱格式！',
+                  },
+                ]}
+              />
+              <ProFormText
+                name="name"
                 fieldProps={{
                   size: 'large',
                   prefix: <UserOutlined />,
                 }}
-                placeholder={'请输入账号'}
+                placeholder={'请输入用户名'}
                 rules={[
                   {
                     required: true,
-                    message: '账号是必填项！',
+                    message: '用户名是必填项！',
+                  },
+                  {
+                    min: 2,
+                    max: 20,
+                    message: '用户名长度在2-20个字符之间！',
+                  },
+                ]}
+              />
+              <ProFormCaptcha
+                name="captcha"
+                fieldProps={{
+                  size: 'large',
+                  prefix: <SafetyOutlined />,
+                }}
+                captchaProps={{
+                  size: 'large',
+                }}
+                placeholder={'请输入验证码'}
+                captchaTextRender={(timing, count) => {
+                  if (timing) {
+                    return `${count} 秒后重新获取`;
+                  }
+                  return '获取验证码';
+                }}
+                phoneName="email"
+                onGetCaptcha={async (email) => {
+                  await handleSendCaptcha(email);
+                }}
+                rules={[
+                  {
+                    required: true,
+                    message: '验证码是必填项！',
+                  },
+                  {
+                    len: 6,
+                    message: '验证码长度为6位！',
                   },
                 ]}
               />
               <ProFormText.Password
-                name="userPassword"
+                name="password"
                 fieldProps={{
                   size: 'large',
                   prefix: <LockOutlined />,
@@ -128,19 +206,9 @@ const UserRegisterPage: React.FC = () => {
                     required: true,
                     message: '密码是必填项！',
                   },
-                ]}
-              />
-              <ProFormText.Password
-                name="checkPassword"
-                fieldProps={{
-                  size: 'large',
-                  prefix: <LockOutlined />,
-                }}
-                placeholder={'请再次确认密码'}
-                rules={[
                   {
-                    required: true,
-                    message: '确认密码是必填项！',
+                    min: 6,
+                    message: '密码长度至少6位！',
                   },
                 ]}
               />

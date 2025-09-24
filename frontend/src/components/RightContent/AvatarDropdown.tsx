@@ -1,7 +1,8 @@
 import { userLogoutUsingPost } from '@/services/origin-backend/userController';
+import { TokenManager } from '@/utils/token';
 import { LogoutOutlined, SettingOutlined, UserOutlined } from '@ant-design/icons';
 import { history, useModel } from '@umijs/max';
-import { Avatar, Button, Space } from 'antd';
+import { Avatar, Button, Space, message } from 'antd';
 import { stringify } from 'querystring';
 import type { MenuInfo } from 'rc-menu/lib/interface';
 import React, { useCallback } from 'react';
@@ -18,7 +19,20 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({ menu }) => {
    * 退出登录，并且将当前的 url 保存
    */
   const loginOut = async () => {
-    await userLogoutUsingPost();
+    try {
+      // 可选：调用后端登出接口（如果后端需要）
+      // await userLogoutUsingPost();
+      
+      // 清理本地存储的 JWT tokens
+      TokenManager.clearTokens();
+      
+      message.success('退出登录成功');
+    } catch (error) {
+      // 即使后端登出失败，也要清理本地 token
+      TokenManager.clearTokens();
+      console.error('登出时发生错误:', error);
+    }
+    
     const { search, pathname } = window.location;
     const urlParams = new URL(window.location.href).searchParams;
     /** 此方法会跳转到 redirect 参数所在的位置 */

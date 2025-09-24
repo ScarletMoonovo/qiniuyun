@@ -2,33 +2,33 @@
 /* eslint-disable */
 import { request } from '@umijs/max';
 
-/** 此处后端没有提供注释 GET /auth/github */
+/** 此处后端没有提供注释 GET /api/auth/github */
 export async function githubOauth(options?: { [key: string]: any }) {
-  return request<string>('/auth/github', {
+  return request<string>('/api/auth/github', {
     method: 'GET',
     ...(options || {}),
   });
 }
 
-/** 此处后端没有提供注释 GET /auth/github/callback */
+/** 此处后端没有提供注释 GET /api/auth/github/callback */
 export async function githubCallback(options?: { [key: string]: any }) {
-  return request<string>('/auth/github/callback', {
+  return request<string>('/api/auth/github/callback', {
     method: 'GET',
     ...(options || {}),
   });
 }
 
-/** 此处后端没有提供注释 POST /avatar */
+/** 此处后端没有提供注释 POST /api/avatar */
 export async function postAvatar(options?: { [key: string]: any }) {
-  return request<string>('/avatar', {
+  return request<string>('/api/avatar', {
     method: 'POST',
     ...(options || {}),
   });
 }
 
-/** 此处后端没有提供注释 POST /captcha */
+/** 此处后端没有提供注释 POST /api/captcha */
 export async function sendCaptcha(body: API.CaptchaRequest, options?: { [key: string]: any }) {
-  return request<string>('/captcha', {
+  return request<string>('/api/captcha', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -38,9 +38,9 @@ export async function sendCaptcha(body: API.CaptchaRequest, options?: { [key: st
   });
 }
 
-/** 此处后端没有提供注释 POST /login */
+/** 此处后端没有提供注释 POST /api/login */
 export async function login(body: API.LoginRequest, options?: { [key: string]: any }) {
-  return request<API.LoginResponse>('/login', {
+  return request<API.LoginResponse>('/api/login', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -50,24 +50,21 @@ export async function login(body: API.LoginRequest, options?: { [key: string]: a
   });
 }
 
-/** 此处后端没有提供注释 POST /login/captcha */
-export async function loginEmail(
-  body: API.EmailCaptchaLoginRequest,
-  options?: { [key: string]: any },
-) {
-  return request<API.LoginResponse>('/login/captcha', {
+/** 此处后端没有提供注释 POST /api/refresh */
+export async function refreshToken(refreshTokenValue: string, options?: { [key: string]: any }) {
+  return request<API.RefreshResponse>('/api/refresh', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'Authorization': refreshTokenValue,
     },
-    data: body,
     ...(options || {}),
   });
 }
 
-/** 此处后端没有提供注释 POST /register */
+/** 此处后端没有提供注释 POST /api/register */
 export async function register(body: API.RegisterRequest, options?: { [key: string]: any }) {
-  return request<API.RegisterResponse>('/register', {
+  return request<API.RegisterResponse>('/api/register', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -77,9 +74,9 @@ export async function register(body: API.RegisterRequest, options?: { [key: stri
   });
 }
 
-/** 此处后端没有提供注释 PUT /user */
+/** 此处后端没有提供注释 PUT /api/user */
 export async function updateUserinfo(body: API.UserExtend, options?: { [key: string]: any }) {
-  return request<string>('/user', {
+  return request<string>('/api/user', {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -89,27 +86,27 @@ export async function updateUserinfo(body: API.UserExtend, options?: { [key: str
   });
 }
 
-/** 此处后端没有提供注释 GET /user/${param0} */
+/** 此处后端没有提供注释 GET /api/user/${param0} */
 export async function getUserInfo(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.getUserInfoParams,
   options?: { [key: string]: any },
 ) {
   const { id: param0, ...queryParams } = params;
-  return request<API.UserInfo>(`/user/${param0}`, {
+  return request<API.UserInfo>(`/api/user/${param0}`, {
     method: 'GET',
     params: { ...queryParams },
     ...(options || {}),
   });
 }
 
-/** 此处后端没有提供注释 GET /user/name */
+/** 此处后端没有提供注释 GET /api/user/name */
 export async function getUserByName(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.getUserByNameParams,
   options?: { [key: string]: any },
 ) {
-  return request<API.GetUserByNameResponse>('/user/name', {
+  return request<API.GetUserByNameResponse>('/api/user/name', {
     method: 'GET',
     params: {
       ...params,
@@ -118,9 +115,9 @@ export async function getUserByName(
   });
 }
 
-/** 此处后端没有提供注释 PUT /user/password */
+/** 此处后端没有提供注释 PUT /api/user/password */
 export async function changePwd(body: API.ChangePwdRequest, options?: { [key: string]: any }) {
-  return request<string>('/user/password', {
+  return request<string>('/api/user/password', {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',

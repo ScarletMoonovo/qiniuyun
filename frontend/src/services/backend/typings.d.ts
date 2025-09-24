@@ -7,11 +7,6 @@ declare namespace API {
     password: string;
   };
 
-  type EmailCaptchaLoginRequest = {
-    email: string;
-    captcha: string;
-  };
-
   type getUserByNameParams = {
     name: string;
     cursor: number;
@@ -28,11 +23,17 @@ declare namespace API {
 
   type LoginRequest = {
     email: string;
-    password: string;
+    password?: string;
+    captcha?: string;
   };
 
   type LoginResponse = {
     id: number;
+    accessToken: string;
+    refreshToken: string;
+  };
+
+  type RefreshResponse = {
     accessToken: string;
     refreshToken: string;
   };
