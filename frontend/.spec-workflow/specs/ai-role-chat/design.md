@@ -255,12 +255,25 @@ declare namespace API {
    录音组件      文件上传API      语音服务API    聊天服务API    音频播放组件
 ```
 
-#### 2.3.4 实时通信架构
-- **WebRTC连接**: 用于实时双向音频流传输，支持低延迟语音通话
-- **WebSocket连接**: 用于文本消息、控制信令和状态同步
-- **HTTP请求**: 用于角色数据、历史记录等静态数据获取
-- **音频流处理**: 实时音频编码/解码、回声消除、噪声抑制
-- **信令服务**: WebRTC连接建立、ICE候选交换、媒体协商
+#### 2.3.4 实时通信架构（独立信令服务器）
+```
+前端 (React + Simple-peer) ←→ 信令服务器 (Node.js + Socket.IO) ←→ AI后端
+            ↓                                                        ↓
+    WebRTC P2P音频流 ←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←←← WebRTC P2P音频流
+```
+
+**架构组件**：
+- **前端WebRTC**: Simple-peer封装的WebRTC连接，处理音频流
+- **信令服务器**: 独立的Node.js服务，处理WebRTC信令交换和房间管理
+- **WebSocket通道**: 前端与信令服务器的实时通信连接
+- **HTTP API**: 用于角色数据、历史记录等静态数据获取
+- **音频流处理**: 浏览器原生WebRTC音频处理（AEC、NS、AGC）
+
+**信令服务器功能**：
+- WebRTC信令转发（Offer/Answer/ICE候选）
+- 通话房间管理（基于roleId+sessionId）
+- 连接状态同步和监控
+- 用户会话管理和清理
 
 ## 3. 技术栈选择
 
@@ -288,13 +301,20 @@ declare namespace API {
 ```json
 {
   "dependencies": {
-    "socket.io-client": "^4.7.0",
-    "recordrtc": "^5.6.2", 
-    "react-audio-player": "^0.17.0",
-    "wavesurfer.js": "^7.0.0"
+    "simple-peer": "^9.11.1"
+  },
+  "devDependencies": {
+    "@types/simple-peer": "^9.11.5"
   }
 }
 ```
+
+### 3.4 信令服务器技术栈
+- **服务器框架**: Node.js + Express
+- **实时通信**: Socket.IO 4.x
+- **WebRTC抽象**: Simple-peer（前端）
+- **进程管理**: PM2（生产环境）
+- **容器化**: Docker + Docker Compose
 
 ## 4. 模块设计
 
@@ -787,136 +807,159 @@ DELETE /api/chat/sessions/:sessionId  # 删除聊天记录
 
 ### 5.2 WebSocket事件定义
 
-#### 5.2.1 客户端发送事件
+#### 5.2.1 WebSocket服务（已更新为信令服务器连接）
 ```typescript
 // WebSocket连接管理
 // src/utils/socketService.ts
-import { io, Socket } from 'socket.io-client';
-
 export class SocketService {
-  private socket: Socket | null = null;
+  private socket: WebSocket | null = null;
+  private status: ConnectionStatus = 'disconnected';
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
 
-  connect(roleId: number): void {
-    const token = TokenManager.getAccessToken();
-    
-    this.socket = io('/chat', {
-      query: { roleId },
-      auth: { token },
-      transports: ['websocket', 'polling'],
-    });
+  public connect(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (this.socket && this.status === 'connected') {
+        resolve();
+        return;
+      }
 
-    this.setupEventListeners();
-  }
+      this.setStatus('connecting');
 
-  private setupEventListeners(): void {
-    if (!this.socket) return;
+      try {
+        // 连接到独立信令服务器
+        this.socket = new WebSocket(this.options.url);
 
-    this.socket.on('connect', () => {
-      console.log('WebSocket连接成功');
-      this.reconnectAttempts = 0;
-    });
-
-    this.socket.on('disconnect', () => {
-      console.log('WebSocket连接断开');
-      this.handleReconnect();
-    });
-
-    this.socket.on('message', (message: API.ChatMessage) => {
-      // 处理接收到的消息（文本或语音）
-      this.handleMessage(message);
-    });
-
-    this.socket.on('typing', (data: { isTyping: boolean }) => {
-      // 处理角色正在输入状态
-      this.handleTypingStatus(data.isTyping);
+        this.socket.onopen = () => {
+          console.log('WebSocket连接成功');
+          this.setStatus('connected');
+          this.reconnectAttempts = 0;
+          this.startHeartbeat();
+          resolve();
+        };
+      } catch (error) {
+        console.error('创建WebSocket连接失败:', error);
+        this.setStatus('error');
+        reject(error);
+      }
     });
   }
 
-  // 发送文本消息
-  sendTextMessage(message: API.SendMessageRequest): void {
-    if (this.socket?.connected) {
-      this.socket.emit('sendTextMessage', message);
+  // 发送Simple-peer信令数据
+  public sendPeerSignal(roleId: number, sessionId: string, signalData: any): boolean {
+    return this.sendMessage({
+      type: 'peer_signal',
+      payload: {
+        roleId,
+        sessionId,
+        signalData,
+      },
+    });
+  }
+
+  // 发送语音通话开始信号
+  public sendVoiceCallStart(roleId: number, sessionId: string, callMode: 'realtime' | 'traditional' = 'realtime'): boolean {
+    return this.sendMessage({
+      type: 'voice_call_start',
+      payload: {
+        roleId,
+        sessionId,
+        callMode,
+      },
+    });
+  }
+
+  // 发送语音通话结束信号
+  public sendVoiceCallEnd(roleId: number, sessionId: string, duration: number): boolean {
+    return this.sendMessage({
+      type: 'voice_call_end',
+      payload: {
+        roleId,
+        sessionId,
+        duration,
+      },
+    });
+  }
+
+  // 发送消息
+  public sendMessage(message: Omit<API.WebSocketMessage, 'timestamp'>): boolean {
+    if (!this.socket || this.status !== 'connected') {
+      console.warn('WebSocket未连接，无法发送消息');
+      return false;
     }
-  }
 
-  // 发送语音消息
-  sendVoiceMessage(message: API.SendMessageRequest): void {
-    if (this.socket?.connected) {
-      this.socket.emit('sendVoiceMessage', message);
-    }
-  }
+    try {
+      const fullMessage: API.WebSocketMessage = {
+        ...message,
+        timestamp: new Date().toISOString(),
+      };
 
-  // 通知开始输入
-  startTyping(): void {
-    if (this.socket?.connected) {
-      this.socket.emit('startTyping');
-    }
-  }
-
-  // 通知停止输入
-  stopTyping(): void {
-    if (this.socket?.connected) {
-      this.socket.emit('stopTyping');
-    }
-  }
-
-  private handleReconnect(): void {
-    if (this.reconnectAttempts < this.maxReconnectAttempts) {
-      this.reconnectAttempts++;
-      setTimeout(() => {
-        this.socket?.connect();
-      }, 1000 * this.reconnectAttempts);
+      this.socket.send(JSON.stringify(fullMessage));
+      return true;
+    } catch (error) {
+      console.error('发送WebSocket消息失败:', error);
+      return false;
     }
   }
 
   disconnect(): void {
-    this.socket?.disconnect();
-    this.socket = null;
+    this.isManualClose = true;
+    if (this.socket) {
+      this.socket.close(1000, '手动断开连接');
+      this.socket = null;
+    }
+    this.setStatus('disconnected');
   }
 }
 ```
 
-#### 5.2.2 服务端推送事件
+#### 5.2.2 信令服务器事件（Socket.IO）
 ```typescript
-// 接收文本消息
-socket.on('textMessage', (message: API.ChatMessage) => {
-  // 处理文本消息
-});
+// 信令服务器发送的事件类型
+interface SignalingServerEvents {
+  // 用户加入房间
+  'user_joined': (data: { socketId: string, userId: string, roleId: number, sessionId: string }) => void;
+  
+  // 用户离开房间
+  'user_left': (data: { socketId: string, roleId: number, sessionId: string, reason: string }) => void;
+  
+  // Simple-peer信令数据
+  'peer_signal': (data: { roleId: number, sessionId: string, signalData: any, fromSocketId: string }) => void;
+  
+  // 语音通话开始通知
+  'voice_call_start': (data: { roleId: number, sessionId: string, callMode: string, fromSocketId: string }) => void;
+  
+  // 语音通话结束通知
+  'voice_call_end': (data: { roleId: number, sessionId: string, duration: number, fromSocketId: string }) => void;
+  
+  // 语音通话状态更新
+  'voice_call_status': (data: { roleId: number, sessionId: string, status: string, quality?: string, fromSocketId: string }) => void;
+  
+  // 文本消息转发
+  'chat_message': (data: { roleId: number, sessionId: string, message: any, fromSocketId: string, timestamp: number }) => void;
+  
+  // 输入状态
+  'typing_start': (data: { roleId: number, sessionId: string, fromSocketId: string }) => void;
+  'typing_stop': (data: { roleId: number, sessionId: string, fromSocketId: string }) => void;
+}
 
-// 接收语音消息
-socket.on('voiceMessage', (message: API.ChatMessage) => {
-  // 处理语音消息，包含audioUrl
-});
-
-// 角色正在输入（文本模式）
-socket.on('roleTyping', (data: { roleId: number, isTyping: boolean }) => {
-  // 显示"正在输入..."状态
-});
-
-// 角色正在思考（语音模式）
-socket.on('roleThinking', (data: { roleId: number, isThinking: boolean }) => {
-  // 显示"正在思考..."状态
-});
-
-// 语音合成进度
-socket.on('voiceSynthesisProgress', (data: { 
-  messageId: string, 
-  progress: number, 
-  status: 'processing' | 'ready' | 'error' 
-}) => {
-  // 更新语音合成进度
-});
-
-// 连接状态
-socket.on('connectionStatus', (status: 'connected' | 'disconnected') => {
-  // 更新连接状态
-});
-
-// 错误处理
-socket.on('error', (error: { code: string, message: string }) => {
-  // 处理错误
+// 前端事件处理器设置
+const socketService = getSocketService();
+socketService.setHandlers({
+  onPeerSignal: (roleId, sessionId, signalData) => {
+    // 处理Simple-peer信令数据
+    if (voiceService.matchesCurrentCall(roleId, sessionId)) {
+      voiceService.handleSignalData(signalData);
+    }
+  },
+  onVoiceCallStart: (roleId, sessionId, callMode) => {
+    // 处理语音通话开始通知
+    console.log('收到语音通话开始通知:', roleId, sessionId, callMode);
+  },
+  onVoiceCallEnd: (roleId, sessionId, duration) => {
+    // 处理语音通话结束通知
+    console.log('收到语音通话结束通知:', roleId, sessionId, duration);
+  }
 });
 ```
 
@@ -1210,4 +1253,68 @@ export class PerformanceMonitor {
 }
 ```
 
-通过这个详细的技术设计文档，我们为AI角色扮演聊天功能提供了完整的技术实现指南，确保能够在现有架构基础上高质量地实现所有需求功能。
+## 9. 信令服务器架构
+
+### 9.1 信令服务器概述
+为了实现WebRTC实时语音通话，我们创建了独立的信令服务器来处理连接建立和信令交换。
+
+### 9.2 服务器架构
+```
+信令服务器 (Node.js + Socket.IO)
+├── 连接管理
+│   ├── WebSocket连接处理
+│   ├── 用户会话管理
+│   └── 断线重连机制
+├── 房间管理
+│   ├── 通话房间创建
+│   ├── 用户加入/离开
+│   └── 房间状态同步
+├── 信令处理
+│   ├── Simple-peer信令转发
+│   ├── WebRTC Offer/Answer交换
+│   └── ICE候选交换
+└── 监控统计
+    ├── 活跃通话监控
+    ├── 连接状态统计
+    └── 性能指标收集
+```
+
+### 9.3 开发和部署
+```bash
+# 开发环境启动
+cd signaling-server
+./start.sh start dev
+
+# 生产环境部署
+./start.sh start prod
+
+# Docker部署
+docker-compose up -d
+
+# PM2进程管理
+./start.sh start pm2
+```
+
+### 9.4 监控端点
+- **健康检查**: `GET /health`
+- **活跃通话**: `GET /api/active-calls`
+- **通话统计**: `GET /api/call-stats`
+- **在线用户**: `GET /api/online-users`
+
+### 9.5 配置要求
+- **Node.js**: >= 16.0.0
+- **端口**: 3001（可配置）
+- **CORS**: 需配置前端域名
+- **STUN服务器**: 默认使用Google公共STUN
+
+## 10. 总结
+
+通过这个详细的技术设计文档，我们为AI角色扮演聊天功能提供了完整的技术实现指南，包括独立信令服务器的架构设计，确保能够在现有架构基础上高质量地实现所有需求功能。
+
+主要技术亮点：
+- 基于现有Ant Design Pro架构的无缝集成
+- 独立信令服务器支持的WebRTC实时语音通话
+- Simple-peer简化的WebRTC实现
+- 完善的状态管理和错误处理机制
+- 良好的可扩展性和维护性
+- 完整的开发、测试、部署工具链

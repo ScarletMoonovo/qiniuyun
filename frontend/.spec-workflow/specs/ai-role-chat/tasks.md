@@ -127,6 +127,22 @@
   - ✅ 连接状态同步
   - ✅ 简化的错误处理
 
+#### [x] T006c: 独立信令服务器
+- **描述**: 创建独立的Node.js信令服务器，处理WebRTC信令交换
+- **优先级**: P0
+- **预估工时**: 1天
+- **文件**: `signaling-server/server.js`, `signaling-server/package.json`
+- **依赖**: T006b
+- **验收标准**:
+  - ✅ Socket.IO WebSocket服务器
+  - ✅ 通话房间管理（基于roleId+sessionId）
+  - ✅ Simple-peer信令转发
+  - ✅ 用户会话管理
+  - ✅ 连接状态监控
+  - ✅ 健康检查和监控API
+  - ✅ 完整的部署文档和脚本
+  - ✅ Docker支持
+
 ### 2.2 阶段二：角色创建与管理功能（第2-3周）
 
 #### [ ] T007: 角色创建页面
