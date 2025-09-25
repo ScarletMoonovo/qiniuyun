@@ -277,8 +277,7 @@ declare namespace API {
   // WebSocket消息类型定义
   type WebSocketMessage = {
     type: 'chat_message' | 'typing_start' | 'typing_stop' | 'error' | 'connection' | 
-          'webrtc_offer' | 'webrtc_answer' | 'webrtc_ice_candidate' | 'voice_call_start' | 
-          'voice_call_end' | 'voice_call_status';
+          'peer_signal' | 'voice_call_start' | 'voice_call_end' | 'voice_call_status';
     payload: any;
     timestamp: string;
   };
@@ -299,31 +298,13 @@ declare namespace API {
     };
   };
 
-  // WebRTC信令相关消息类型
-  type WebRTCOfferMessage = {
-    type: 'webrtc_offer';
+  // Simple-peer信令消息类型
+  type PeerSignalMessage = {
+    type: 'peer_signal';
     payload: {
       roleId: number;
       sessionId: string;
-      offer: RTCSessionDescriptionInit;
-    };
-  };
-
-  type WebRTCAnswerMessage = {
-    type: 'webrtc_answer';
-    payload: {
-      roleId: number;
-      sessionId: string;
-      answer: RTCSessionDescriptionInit;
-    };
-  };
-
-  type WebRTCIceCandidateMessage = {
-    type: 'webrtc_ice_candidate';
-    payload: {
-      roleId: number;
-      sessionId: string;
-      candidate: RTCIceCandidateInit;
+      signalData: any; // Simple-peer信令数据
     };
   };
 

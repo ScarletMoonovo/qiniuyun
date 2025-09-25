@@ -18,10 +18,8 @@ export interface SocketEventHandlers {
   onError?: (error: Event) => void;
   onMessage?: (message: API.WebSocketMessage) => void;
   onStatusChange?: (status: ConnectionStatus) => void;
-  // WebRTC信令专用处理器
-  onWebRTCOffer?: (roleId: number, sessionId: string, offer: RTCSessionDescriptionInit) => void;
-  onWebRTCAnswer?: (roleId: number, sessionId: string, answer: RTCSessionDescriptionInit) => void;
-  onWebRTCICECandidate?: (roleId: number, sessionId: string, candidate: RTCIceCandidateInit) => void;
+  // Simple-peer信令处理器
+  onPeerSignal?: (roleId: number, sessionId: string, signalData: any) => void;
   onVoiceCallStart?: (roleId: number, sessionId: string, callMode: 'realtime' | 'traditional') => void;
   onVoiceCallEnd?: (roleId: number, sessionId: string, duration: number) => void;
   onVoiceCallStatus?: (roleId: number, sessionId: string, status: string, quality?: string) => void;
@@ -179,46 +177,18 @@ export class SocketService {
     });
   }
 
-  // ==================== WebRTC信令相关方法 ====================
+  // ==================== Simple-peer信令方法 ====================
 
   /**
-   * 发送WebRTC Offer
+   * 发送Simple-peer信令数据
    */
-  public sendWebRTCOffer(roleId: number, sessionId: string, offer: RTCSessionDescriptionInit): boolean {
+  public sendPeerSignal(roleId: number, sessionId: string, signalData: any): boolean {
     return this.sendMessage({
-      type: 'webrtc_offer',
+      type: 'peer_signal',
       payload: {
         roleId,
         sessionId,
-        offer,
-      },
-    });
-  }
-
-  /**
-   * 发送WebRTC Answer
-   */
-  public sendWebRTCAnswer(roleId: number, sessionId: string, answer: RTCSessionDescriptionInit): boolean {
-    return this.sendMessage({
-      type: 'webrtc_answer',
-      payload: {
-        roleId,
-        sessionId,
-        answer,
-      },
-    });
-  }
-
-  /**
-   * 发送ICE候选
-   */
-  public sendICECandidate(roleId: number, sessionId: string, candidate: RTCIceCandidateInit): boolean {
-    return this.sendMessage({
-      type: 'webrtc_ice_candidate',
-      payload: {
-        roleId,
-        sessionId,
-        candidate,
+        signalData,
       },
     });
   }
@@ -304,29 +274,13 @@ export class SocketService {
       return;
     }
 
-    // 处理WebRTC信令消息
+    // 处理Simple-peer信令消息
     switch (message.type) {
-      case 'webrtc_offer':
-        this.handlers.onWebRTCOffer?.(
+      case 'peer_signal':
+        this.handlers.onPeerSignal?.(
           message.payload.roleId,
           message.payload.sessionId,
-          message.payload.offer
-        );
-        break;
-      
-      case 'webrtc_answer':
-        this.handlers.onWebRTCAnswer?.(
-          message.payload.roleId,
-          message.payload.sessionId,
-          message.payload.answer
-        );
-        break;
-      
-      case 'webrtc_ice_candidate':
-        this.handlers.onWebRTCICECandidate?.(
-          message.payload.roleId,
-          message.payload.sessionId,
-          message.payload.candidate
+          message.payload.signalData
         );
         break;
       
