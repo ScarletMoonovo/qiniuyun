@@ -234,18 +234,33 @@ declare namespace API {
    输入组件      前端验证      聊天服务API      AI处理服务      消息组件
 ```
 
-#### 2.3.2 语音聊天数据流
+#### 2.3.2 实时语音聊天数据流（电话式）
 ```
-用户语音输入 → 语音识别(STT) → 文本处理 → AI对话生成 → 语音合成(TTS) → 音频播放
+用户语音流 ←→ WebRTC音频通道 ←→ 实时STT ←→ AI流式处理 ←→ 实时TTS ←→ 音频输出流
      ↓              ↓              ↓              ↓              ↓
-   录音组件      语音服务API      聊天服务API      语音合成API      音频播放组件
+   音频捕获      WebRTC连接      流式语音API    AI流式服务     音频播放器
+   
+双向同时通话：
+用户输入流 ────────┐                    ┌──────── AI输出流
+              ↓                    ↑
+          音频混合器 ←→ 回声消除 ←→ 打断检测
+              ↓                    ↑  
+用户听到声音 ────────┘                    └──────── AI接收声音
 ```
 
-#### 2.3.3 实时通信架构
-- **WebSocket连接**: 用于实时消息传输和状态同步（文本和语音）
+#### 2.3.3 消息式语音聊天数据流（备选模式）
+```
+用户语音录制 → 语音文件上传 → STT转换 → AI处理 → TTS合成 → 音频文件播放
+     ↓              ↓              ↓              ↓              ↓
+   录音组件      文件上传API      语音服务API    聊天服务API    音频播放组件
+```
+
+#### 2.3.4 实时通信架构
+- **WebRTC连接**: 用于实时双向音频流传输，支持低延迟语音通话
+- **WebSocket连接**: 用于文本消息、控制信令和状态同步
 - **HTTP请求**: 用于角色数据、历史记录等静态数据获取
-- **语音数据流**: 采用分块传输优化大文件处理
-- **消息类型支持**: 统一处理文本消息和语音消息
+- **音频流处理**: 实时音频编码/解码、回声消除、噪声抑制
+- **信令服务**: WebRTC连接建立、ICE候选交换、媒体协商
 
 ## 3. 技术栈选择
 
@@ -256,12 +271,18 @@ declare namespace API {
 - **状态管理**: React Hooks + 页面级状态管理
 - **路由管理**: UmiJS内置路由系统
 
-### 3.2 语音技术栈
-- **语音录制**: Web Audio API + MediaRecorder API
-- **语音播放**: HTML5 Audio API
-- **实时通信**: WebSocket
-- **音频处理**: Web Audio API + AudioContext
-- **语音格式**: WebM for recording, MP3/WAV for playback
+### 3.2 实时语音技术栈
+- **实时通信**: WebRTC + RTCPeerConnection
+- **音频流处理**: Web Audio API + AudioContext + MediaStream
+- **语音录制**: MediaRecorder API (备选模式)
+- **语音播放**: Web Audio API + AudioBufferSourceNode
+- **信令服务**: WebSocket (用于WebRTC信令)
+- **音频格式**: Opus for real-time, WebM for recording backup
+- **音频处理**: 
+  - 回声消除 (AEC)
+  - 噪声抑制 (NS) 
+  - 自动增益控制 (AGC)
+  - 音频混合和分离
 
 ### 3.3 新增依赖库
 ```json
