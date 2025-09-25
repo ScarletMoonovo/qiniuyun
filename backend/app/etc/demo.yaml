@@ -1,0 +1,39 @@
+Name: api
+Host: 0.0.0.0
+Port: 10086
+MaxBytes: 524288000
+Timeout: 10000000
+
+JwtAuth:
+  AccessSecret: ae0536f9-6450-4606-8e13-5d26ed505dff
+  AccessExpire: 31536000
+
+Mysql:
+  Path: 127.0.0.1
+  Port: 3306
+  Dbname: roletalk
+  Username: user
+  Password: pass
+  MaxIdleConns: 10
+  MaxOpenConns: 10
+  LogMode: dev
+  LogZap: false
+  Config: charset=utf8mb4&parseTime=True&loc=Local
+CacheRedis:
+  - Host: 127.0.0.1:6379
+    Pass: pass
+
+Redis:
+  Host: 127.0.0.1:6379
+  Password: pass
+
+EmailService:
+  From: "roletalk"
+  Addr: "example@email.com:465"
+  Password: "pass"
+  Username: "user"
+  Host: "example@email.com"
+
+LLM:
+  ApiKey: "xxx"
+  Host: "https://xxx.com"

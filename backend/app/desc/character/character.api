@@ -1,0 +1,30 @@
+syntax = "v1"
+
+info(
+    title: "角色模块"
+    desc: "角色模块"
+)
+
+//新建角色
+type (
+    NewCharacterRequest {
+        Background string `json:"background"`
+        Name string `json:"name"`
+        Avatar string `json:"avatar"`
+        Description string `json:"description"`
+        OpenLine string `json:"open_line"`
+    }
+    NewCharacterResponse {
+
+    }
+)
+
+@server(
+    group: character
+    middleware: Auth
+)
+
+service api {
+    @handler newCharacter
+    post /character (NewCharacterRequest) returns ()
+}

@@ -1,0 +1,123 @@
+syntax = "v1"
+
+info(
+    title: "用户模块"
+    desc: "用户模块"
+)
+
+// 基础结构体
+type (
+    User {
+        ID int64 `json:"id"`
+        Name string `json:"name"`
+        Avatar string `json:"avatar"`
+        Birthday int64 `json:"birthday,optional"`
+        Sex string `json:"sex,options=[male,female],optional"`
+        Signature string `json:"signature,optional"`
+    }
+)
+
+//发送邮箱
+type (
+    CaptchaRequest {
+        Email string `json:"email" validate:"email"`
+    }
+)
+
+// 通过名字查找用户
+type (
+    GetUserByNameRequest {
+        Name string `form:"name" validate:"required,excludesall=;#<>"`
+        Cursor int64 `form:"cursor"`
+        PageSize int64 `form:"pageSize"`
+    }
+    GetUserByNameResponse {
+        Users []User `json:"users"`
+    }
+)
+
+// 注册
+type (
+    RegisterRequest {
+        Email string `json:"email" validate:"email"`
+        Captcha string `json:"captcha" validate:"number,len=6"`
+        Name string `json:"name" validate:"required,excludesall=;#<>"`
+        Password string `json:"password" validate:"alphanum,min=8,max=16"`
+    }
+    RegisterResponse {
+        ID int64 `json:"id"`
+        AccessToken string `json:"accessToken"`
+        RefreshToken string `json:"refreshToken"`
+    }
+)
+
+// 登录
+type (
+    LoginRequest {       //密码登录
+        Email string `json:"email" validate:"email"`
+        Password string `json:"password,optional"`
+        Captcha string `json:"captcha,optional"`
+    }
+    LoginResponse {
+        ID int64 `json:"id"`
+        AccessToken string `json:"accessToken"`
+        RefreshToken string `json:"refreshToken"`
+    }
+)
+
+// 获得用户详细信息
+type (
+    GetUserRequest {
+        ID int64 `path:"id"`
+    }
+    GetUserResponse {
+        User User `json:"user"`
+    }
+)
+
+// refresh token
+type (
+    RefreshResponse {
+        AccessToken string `json:"accessToken"`
+        RefreshToken string `json:"refreshToken"`
+    }
+)
+
+@server(
+    prefix: api
+    group: user
+    middleware: Token
+)
+service api {
+    @handler getUserByName
+    get /user/name (GetUserByNameRequest) returns (GetUserByNameResponse)
+    @handler register
+    post /register (RegisterRequest) returns (RegisterResponse)
+    @handler login
+    post /login (LoginRequest) returns (LoginResponse)
+    @handler getUser
+    get /user/:id (GetUserRequest) returns (GetUserResponse)
+    @handler sendCaptcha
+    post /captcha (CaptchaRequest)
+    @handler refreshToken
+    post /refresh returns (RefreshResponse)
+}
+
+// 修改密码
+type (
+    ChangePwdRequest {
+        Password string `json:"password" validate:"alphanum,min=8,max=16"`
+    }
+)
+
+@server(
+    prefix: api
+    group: user
+    middleware: Auth
+)
+service api {
+    @handler changePwd      //修改密码
+    put /user/password (ChangePwdRequest)
+    @handler updateUserinfo //改变用户个人信息
+    put /user (User)
+}

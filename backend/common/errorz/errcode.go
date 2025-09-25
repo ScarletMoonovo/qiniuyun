@@ -1,0 +1,23 @@
+package errorz
+
+// 成功返回
+const OK uint32 = 200
+
+/**(前3位代表业务,后三位代表具体功能)**/
+
+// 全局错误码
+const (
+	SERVER_COMMON_ERROR uint32 = 100001 + iota
+	REUQEST_PARAM_ERROR
+	REQUEST_ROLE_ERROR
+	SENSITIVE_WORDS_ERROR
+	DB_ERROR
+	OVER_MAXSIZE_ERROR
+)
+
+// 用户模块
+const (
+	CAPTCHA_VALIDATE_ERROR uint32 = 200001 + iota
+	EMAIL_SEND_ERROR
+	PASSWORD_VALIDATE_ERROR
+)
