@@ -98,3 +98,27 @@ export async function deleteRole(
     ...(options || {}),
   });
 }
+
+/** 获取语音模型列表 GET /api/voice/models */
+export async function getVoiceModels(options?: { [key: string]: any }) {
+  return request<API.GetVoiceModelsResponse>('/api/voice/models', {
+    method: 'GET',
+    ...(options || {}),
+  });
+}
+
+/** 获取角色统计信息 GET /api/roles/:id/stats */
+export async function getRoleStats(
+  id: number,
+  options?: { [key: string]: any }
+) {
+  return request<{
+    totalChats: number;
+    totalMessages: number;
+    avgRating: number;
+    lastChatAt: string;
+  }>(`/api/roles/${id}/stats`, {
+    method: 'GET',
+    ...(options || {}),
+  });
+}

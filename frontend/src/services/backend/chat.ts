@@ -49,7 +49,7 @@ export async function sendTextMessage(
   body: API.SendTextMessageRequest,
   options?: { [key: string]: any }
 ) {
-  return request<API.SendTextMessageResponse>('/api/chat/messages', {
+  return request<API.SendMessageResponse>('/api/chat/messages', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -59,23 +59,22 @@ export async function sendTextMessage(
   });
 }
 
-/** 发送语音消息 POST /api/chat/voice */
-export async function sendVoiceMessage(
-  body: API.SendVoiceMessageRequest,
+/** 发送STT识别的文本消息到后端进行LLM处理 POST /api/chat/stt-text */
+export async function sendSTTText(
+  body: {
+    roleId: number;
+    sessionId?: string;
+    text: string;
+    isFinal: boolean;
+  },
   options?: { [key: string]: any }
 ) {
-  // 创建 FormData 来发送语音文件
-  const formData = new FormData();
-  formData.append('roleId', body.roleId.toString());
-  formData.append('sessionId', body.sessionId);
-  
-  if (body.voiceFile) {
-    formData.append('voiceFile', body.voiceFile);
-  }
-  
-  return request<API.SendVoiceMessageResponse>('/api/chat/voice', {
+  return request<API.SendMessageResponse>('/api/chat/stt-text', {
     method: 'POST',
-    data: formData,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
     ...(options || {}),
   });
 }
@@ -102,14 +101,53 @@ export async function deleteChatMessage(
   });
 }
 
-/** 获取WebSocket连接token GET /api/chat/ws-token */
-export async function getWebSocketToken(
+/** 获取后端WebSocket连接token GET /api/chat/ws-token */
+export async function getBackendWebSocketToken(
   roleId: number,
   options?: { [key: string]: any }
 ) {
   return request<{ token: string; wsUrl: string }>('/api/chat/ws-token', {
     method: 'GET',
     params: { roleId },
+    ...(options || {}),
+  });
+}
+
+/** 开始语音会话 POST /api/chat/voice-session/start */
+export async function startVoiceSession(
+  body: {
+    roleId: number;
+    sessionId?: string;
+  },
+  options?: { [key: string]: any }
+) {
+  return request<{
+    sessionId: string;
+    backendWsUrl: string;
+    token: string;
+  }>('/api/chat/voice-session/start', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+/** 结束语音会话 POST /api/chat/voice-session/end */
+export async function endVoiceSession(
+  body: {
+    sessionId: string;
+  },
+  options?: { [key: string]: any }
+) {
+  return request<{ success: boolean }>('/api/chat/voice-session/end', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
     ...(options || {}),
   });
 }
