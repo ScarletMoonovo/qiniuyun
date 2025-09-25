@@ -276,7 +276,9 @@ declare namespace API {
 
   // WebSocket消息类型定义
   type WebSocketMessage = {
-    type: 'chat_message' | 'typing_start' | 'typing_stop' | 'error' | 'connection';
+    type: 'chat_message' | 'typing_start' | 'typing_stop' | 'error' | 'connection' | 
+          'webrtc_offer' | 'webrtc_answer' | 'webrtc_ice_candidate' | 'voice_call_start' | 
+          'voice_call_end' | 'voice_call_status';
     payload: any;
     timestamp: string;
   };
@@ -294,6 +296,63 @@ declare namespace API {
     payload: {
       roleId: number;
       sessionId: string;
+    };
+  };
+
+  // WebRTC信令相关消息类型
+  type WebRTCOfferMessage = {
+    type: 'webrtc_offer';
+    payload: {
+      roleId: number;
+      sessionId: string;
+      offer: RTCSessionDescriptionInit;
+    };
+  };
+
+  type WebRTCAnswerMessage = {
+    type: 'webrtc_answer';
+    payload: {
+      roleId: number;
+      sessionId: string;
+      answer: RTCSessionDescriptionInit;
+    };
+  };
+
+  type WebRTCIceCandidateMessage = {
+    type: 'webrtc_ice_candidate';
+    payload: {
+      roleId: number;
+      sessionId: string;
+      candidate: RTCIceCandidateInit;
+    };
+  };
+
+  // 实时语音通话相关类型
+  type VoiceCallStartMessage = {
+    type: 'voice_call_start';
+    payload: {
+      roleId: number;
+      sessionId: string;
+      callMode: 'realtime' | 'traditional';
+    };
+  };
+
+  type VoiceCallEndMessage = {
+    type: 'voice_call_end';
+    payload: {
+      roleId: number;
+      sessionId: string;
+      duration: number;
+    };
+  };
+
+  type VoiceCallStatusMessage = {
+    type: 'voice_call_status';
+    payload: {
+      roleId: number;
+      sessionId: string;
+      status: 'connecting' | 'connected' | 'disconnected' | 'error';
+      quality?: 'excellent' | 'good' | 'fair' | 'poor';
     };
   };
 
