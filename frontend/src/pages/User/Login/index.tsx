@@ -55,8 +55,8 @@ const Login: React.FC = () => {
           ...initialState,
           currentUser: {
             id: userInfo.id,
-            userName: userInfo.name,
-            userAvatar: userInfo.avatar,
+            name: userInfo.name,
+            avatar: userInfo.avatar,
             // 其他字段根据需要映射
           },
         });
