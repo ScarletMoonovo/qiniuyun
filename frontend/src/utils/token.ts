@@ -64,32 +64,6 @@ export class TokenManager {
     const token = this.getAccessToken();
     return token ? `Bearer ${token}` : null;
   }
-
-  /**
-   * 获取 Refresh 头部值（Refresh Token）
-   */
-  static getRefreshHeader(): string | null {
-    return this.getRefreshToken();
-  }
-
-  /**
-   * 获取所有认证头部
-   */
-  static getAuthHeaders(): Record<string, string> {
-    const headers: Record<string, string> = {};
-    
-    const accessToken = this.getAccessToken();
-    if (accessToken) {
-      headers.Authorization = `Bearer ${accessToken}`;
-    }
-    
-    const refreshToken = this.getRefreshToken();
-    if (refreshToken) {
-      headers.Refresh = refreshToken;
-    }
-    
-    return headers;
-  }
 }
 
 /**
