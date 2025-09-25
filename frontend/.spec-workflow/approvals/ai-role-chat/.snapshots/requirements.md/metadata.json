@@ -1,0 +1,14 @@
+{
+  "filePath": ".spec-workflow/specs/ai-role-chat/requirements.md",
+  "currentVersion": 1,
+  "snapshots": [
+    {
+      "version": 1,
+      "filename": "snapshot-001.json",
+      "timestamp": "2025-09-25T03:59:53.258Z",
+      "trigger": "initial",
+      "approvalId": "approval_1758772793250_wgz3sh4r4",
+      "approvalTitle": "AI角色扮演聊天功能 - 需求规格说明书"
+    }
+  ]
+}
