@@ -19,7 +19,7 @@ const refreshTokenApi = async (refreshToken: string) => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Refresh': refreshToken, // 通过 Refresh 头部传递 refresh token
+      'Authorization': refreshToken, // 通过 Authorization 头部传递 refreshToken
     },
   });
   
@@ -51,12 +51,14 @@ export const requestConfig: RequestConfig = {
       const needAuth = !skipAuthPaths.some(path => config.url?.includes(path));
       
       if (needAuth) {
-        // 添加认证头部（Authorization 和 Refresh）
-        const authHeaders = TokenManager.getAuthHeaders();
-        config.headers = {
-          ...config.headers,
-          ...authHeaders,
-        };
+        // 添加认证头部（Authorization）
+        const authHeader = TokenManager.getAuthorizationHeader();
+        if (authHeader) {
+          config.headers = {
+            ...config.headers,
+            Authorization: authHeader,
+          };
+        }
       }
       
       return config;
