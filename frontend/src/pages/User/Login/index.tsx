@@ -1,5 +1,5 @@
 import Footer from '@/components/Footer';
-import { login, sendCaptcha, getUserInfo } from '@/services/backend/user';
+import { login, sendCaptcha, getUser } from '@/services/backend/user';
 import { TokenManager } from '@/utils/token';
 import { LockOutlined, MailOutlined, SafetyOutlined } from '@ant-design/icons';
 import { LoginForm, ProFormText, ProFormCaptcha } from '@ant-design/pro-components';
@@ -33,6 +33,7 @@ const Login: React.FC = () => {
         password: type === 'password' ? values.password : undefined,
         captcha: type === 'captcha' ? values.captcha : undefined,
       });
+      // @ts-ignore
       const data = res.data;
 
       const defaultLoginSuccessMessage = '登录成功！';
@@ -47,7 +48,9 @@ const Login: React.FC = () => {
 
       // 登录成功后，使用登录返回的用户 ID 获取完整的用户信息
       try {
-        const userInfo = await getUserInfo({ id: data.id.toString() });
+        const res = await getUser({ id: data.id.toString() });
+        // @ts-ignore
+        const userInfo = res.data.user;
         setInitialState({
           ...initialState,
           currentUser: {
@@ -55,7 +58,7 @@ const Login: React.FC = () => {
             userName: userInfo.name,
             userAvatar: userInfo.avatar,
             // 其他字段根据需要映射
-          } as API.LoginUserVO,
+          },
         });
       } catch (userError) {
         console.error('获取用户信息失败:', userError);
@@ -65,7 +68,7 @@ const Login: React.FC = () => {
           currentUser: {
             id: data.id.toString(),
             // 使用登录返回的基本信息
-          } as API.LoginUserVO,
+          } as API.User,
         });
       }
       

@@ -1,4 +1,3 @@
-import { userLogoutUsingPost } from '@/services/origin-backend/userController';
 import { TokenManager } from '@/utils/token';
 import { LogoutOutlined, SettingOutlined, UserOutlined } from '@ant-design/icons';
 import { history, useModel } from '@umijs/max';
