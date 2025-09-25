@@ -110,12 +110,12 @@ export const AvatarDropdown: React.FC<GlobalHeaderRightProps> = ({ menu }) => {
       }}
     >
       <Space>
-        {currentUser?.userAvatar ? (
-          <Avatar size="small" src={currentUser?.userAvatar} />
+        {currentUser?.avatar ? (
+          <Avatar size="small" src={currentUser?.avatar} />
         ) : (
           <Avatar size="small" icon={<UserOutlined />} />
         )}
-        <span className="anticon">{currentUser?.userName ?? '无名'}</span>
+        <span className="anticon">{currentUser?.name ?? '无名'}</span>
       </Space>
     </HeaderDropdown>
   );

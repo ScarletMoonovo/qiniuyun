@@ -3,8 +3,11 @@ import { getUser } from '@/services/backend/user';
 import { TokenManager } from '@/utils/token';
 import type { RunTimeLayoutConfig } from '@umijs/max';
 import { history } from '@umijs/max';
+import { App, ConfigProvider, Space } from 'antd';
+import zhCN from 'antd/locale/zh_CN';
 import defaultSettings from '../config/defaultSettings';
 import { AvatarDropdown } from './components/RightContent/AvatarDropdown';
+import HeaderActions from './components/RightContent/HeaderActions';
 import { requestConfig } from './requestConfig';
 
 const loginPath = '/user/login';
@@ -29,12 +32,9 @@ export async function getInitialState(): Promise<InitialState> {
           const res = await getUser({ id: userId });
           const userInfo = res.user
           console.log("userInfo: ", userInfo)
-          // 转换数据格式以兼容系统期望的 LoginUserVO 格式
+          // 直接使用用户信息
           initialState.currentUser = {
-            id: userInfo.id?.toString(),
-            userName: userInfo.name,
-            userAvatar: userInfo.avatar,
-            // 其他字段根据需要映射
+            ...userInfo,
           };
         } catch (error: any) {
           // 如果获取用户信息失败（可能 token 过期），清理无效的 token
@@ -61,19 +61,40 @@ export const layout: RunTimeLayoutConfig = ({ initialState }) => {
   return {
     avatarProps: {
       render: () => {
-        return <AvatarDropdown />;
+        return (
+          <Space size="large">
+            <HeaderActions />
+            <AvatarDropdown />
+          </Space>
+        );
       },
     },
     waterMarkProps: {
-      content: initialState?.currentUser?.userName,
+      content: initialState?.currentUser?.name,
     },
     footerRender: () => <Footer />,
     menuHeaderRender: undefined,
+    menuRender: false, // 完全隐藏侧边栏菜单
+    menuDataRender: () => [], // 不渲染菜单数据
     // 自定义 403 页面
     // unAccessible: <div>unAccessible</div>,
     ...defaultSettings,
   };
 };
+
+/**
+ * @name rootContainer 配置，用于包裹整个应用
+ * 解决 Antd 5.x 静态方法的 context 警告问题
+ */
+export function rootContainer(container: any) {
+  return (
+    <ConfigProvider locale={zhCN}>
+      <App>
+        {container}
+      </App>
+    </ConfigProvider>
+  );
+}
 
 /**
  * @name request 配置，可以配置错误处理

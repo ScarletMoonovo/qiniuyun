@@ -7,17 +7,36 @@ export default [
       { path: '/user/register', component: './User/Register' },
     ],
   },
-  { path: '/welcome', icon: 'smile', component: './Welcome', name: '欢迎页' },
-  {
-    path: '/admin',
-    icon: 'crown',
-    name: '管理页',
-    access: 'canAdmin',
-    routes: [
-      { path: '/admin', redirect: '/admin/user' },
-      { icon: 'table', path: '/admin/user', component: './Admin/User', name: '用户管理' },
-    ],
+  { path: '/welcome', component: './Welcome', hideInMenu: true },
+  { path: '/home', component: './Role/Home', name: 'AI角色主页', access: 'canUser' },
+  { 
+    path: '/role/create', 
+    component: './Role/Create', 
+    name: '创建角色',
+    hideInMenu: true,
+    access: 'canUser'
   },
-  { path: '/', redirect: '/welcome' },
+  { 
+    path: '/role/edit/:id', 
+    component: './Role/Edit', 
+    name: '编辑角色',
+    hideInMenu: true,
+    access: 'canUser'
+  },
+  { 
+    path: '/role/detail/:id', 
+    component: './Role/Detail', 
+    name: '角色详情',
+    hideInMenu: true,
+    access: 'canUser'
+  },
+  { 
+    path: '/role/chat/:id', 
+    component: './Role/Chat', 
+    name: '与角色聊天',
+    hideInMenu: true,
+    access: 'canUser'
+  },
+  { path: '/', redirect: '/home' },
   { path: '*', layout: false, component: './404' },
 ];
