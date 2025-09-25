@@ -2,30 +2,6 @@
 /* eslint-disable */
 import { request } from '@umijs/max';
 
-/** 此处后端没有提供注释 GET /api/auth/github */
-export async function githubOauth(options?: { [key: string]: any }) {
-  return request<string>('/api/auth/github', {
-    method: 'GET',
-    ...(options || {}),
-  });
-}
-
-/** 此处后端没有提供注释 GET /api/auth/github/callback */
-export async function githubCallback(options?: { [key: string]: any }) {
-  return request<string>('/api/auth/github/callback', {
-    method: 'GET',
-    ...(options || {}),
-  });
-}
-
-/** 此处后端没有提供注释 POST /api/avatar */
-export async function postAvatar(options?: { [key: string]: any }) {
-  return request<string>('/api/avatar', {
-    method: 'POST',
-    ...(options || {}),
-  });
-}
-
 /** 此处后端没有提供注释 POST /api/captcha */
 export async function sendCaptcha(body: API.CaptchaRequest, options?: { [key: string]: any }) {
   return request<string>('/api/captcha', {
@@ -75,7 +51,7 @@ export async function register(body: API.RegisterRequest, options?: { [key: stri
 }
 
 /** 此处后端没有提供注释 PUT /api/user */
-export async function updateUserinfo(body: API.UserExtend, options?: { [key: string]: any }) {
+export async function updateUserinfo(body: API.User, options?: { [key: string]: any }) {
   return request<string>('/api/user', {
     method: 'PUT',
     headers: {
@@ -87,13 +63,13 @@ export async function updateUserinfo(body: API.UserExtend, options?: { [key: str
 }
 
 /** 此处后端没有提供注释 GET /api/user/${param0} */
-export async function getUserInfo(
+export async function getUser(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
-  params: API.getUserInfoParams,
+  params: API.getUserParams,
   options?: { [key: string]: any },
 ) {
   const { id: param0, ...queryParams } = params;
-  return request<API.UserInfo>(`/api/user/${param0}`, {
+  return request<API.GetUserResponse>(`/api/user/${param0}`, {
     method: 'GET',
     params: { ...queryParams },
     ...(options || {}),

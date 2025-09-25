@@ -1,5 +1,5 @@
 import Footer from '@/components/Footer';
-import { getUserInfo } from '@/services/backend/user';
+import { getUser } from '@/services/backend/user';
 import { TokenManager } from '@/utils/token';
 import type { RunTimeLayoutConfig } from '@umijs/max';
 import { history } from '@umijs/max';
@@ -26,14 +26,16 @@ export async function getInitialState(): Promise<InitialState> {
       if (userId) {
         try {
           // 使用存储的用户 ID 获取用户信息
-          const res = await getUserInfo({ id: userId });
+          const res = await getUser({ id: userId });
+          const userInfo = res.user
+          console.log("userInfo: ", userInfo)
           // 转换数据格式以兼容系统期望的 LoginUserVO 格式
           initialState.currentUser = {
-            id: res.id?.toString(),
-            userName: res.name,
-            userAvatar: res.avatar,
+            id: userInfo.id?.toString(),
+            userName: userInfo.name,
+            userAvatar: userInfo.avatar,
             // 其他字段根据需要映射
-          } as API.LoginUserVO;
+          };
         } catch (error: any) {
           // 如果获取用户信息失败（可能 token 过期），清理无效的 token
           console.error('获取用户信息失败:', error);

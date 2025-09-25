@@ -17,8 +17,12 @@ declare namespace API {
     users: User[];
   };
 
-  type getUserInfoParams = {
+  type getUserParams = {
     id: string;
+  };
+
+  type GetUserResponse = {
+    user: User;
   };
 
   type LoginRequest = {
@@ -55,28 +59,8 @@ declare namespace API {
     id: number;
     name: string;
     avatar: string;
-    follow_count: number;
-    follower_count: number;
-    is_follow: boolean;
-  };
-
-  type UserExtend = {
     birthday?: number;
     sex?: '[male';
     signature?: string;
-    company?: string;
-  };
-
-  type UserInfo = {
-    id?: number;
-    name?: string;
-    avatar?: string;
-    follow_count?: number;
-    follower_count?: number;
-    is_follow?: boolean;
-    birthday?: number;
-    sex?: '[male';
-    signature?: string;
-    company?: string;
   };
 }
