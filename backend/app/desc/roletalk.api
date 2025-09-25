@@ -1,0 +1,11 @@
+syntax = "v1"
+
+info (
+	title:   "roletalk"
+	desc:    "AI 对话"
+	author:  "navanis"
+	email:   "3239089828@qq.com"
+	version: "v0.1.0"
+)
+
+import "user/user.api"
