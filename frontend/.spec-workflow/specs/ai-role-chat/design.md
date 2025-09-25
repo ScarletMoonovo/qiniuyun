@@ -24,7 +24,7 @@
 - ✅ **角色详情**: 查看角色完整信息和设置
 - ✅ **文本聊天**: 与AI角色进行文字对话交流
 - ✅ **语音聊天**: 与AI角色进行实时语音对话（可选模式）
-- ❌ **聊天历史**: 暂不包含，计划在V2.0版本中添加
+- ✅ **聊天历史**: 保存和查看与各个角色的对话记录
 - ❌ **自定义声音训练**: 暂不包含，计划在V2.0版本中添加
 - ❌ **社交分享**: 暂不包含，后续版本考虑
 
@@ -94,51 +94,48 @@ export default [
 ```
 
 #### 2.1.2 状态管理设计
-基于UmiJS的model机制，创建以下状态管理模块：
+采用页面级状态管理方案，使用React Hooks进行本地状态管理：
 
 ```typescript
-// src/models/roleModel.ts
-export default {
-  namespace: 'role',
-  state: {
-    currentRole: null,
-    roleList: [],
-    categories: [],
-    searchHistory: [],
-  },
-  effects: {
-    *fetchRoles({ payload }, { call, put }) { /* ... */ },
-    *searchRoles({ payload }, { call, put }) { /* ... */ },
-  },
-  reducers: {
-    setCurrentRole(state, { payload }) { /* ... */ },
-    setRoleList(state, { payload }) { /* ... */ },
-  },
+// 页面级状态管理示例
+
+// 角色相关页面
+const RoleHomePage = () => {
+  const [roleList, setRoleList] = useState<API.Role[]>([]);
+  const [categories, setCategories] = useState<API.RoleCategory[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [roles, cats] = await Promise.all([
+          roleAPI.getRoleList(),
+          roleAPI.getCategories()
+        ]);
+        setRoleList(roles);
+        setCategories(cats);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 };
 
-// src/models/chatModel.ts  
-export default {
-  namespace: 'chat',
-  state: {
-    currentChat: null,
-    chatHistory: [],
-    chatMode: 'text', // 'text' | 'voice'
-    isRecording: false,
-    isPlaying: false,
-    messages: [],
-    isTyping: false,
-  },
-  effects: {
-    *sendTextMessage({ payload }, { call, put }) { /* ... */ },
-    *sendVoiceMessage({ payload }, { call, put }) { /* ... */ },
-    *switchChatMode({ payload }, { call, put }) { /* ... */ },
-  },
-  reducers: {
-    addMessage(state, { payload }) { /* ... */ },
-    setChatMode(state, { payload }) { /* ... */ },
-    setRecordingStatus(state, { payload }) { /* ... */ },
-    setTypingStatus(state, { payload }) { /* ... */ },
-  },
+// 聊天页面
+const ChatPage = () => {
+  const [messages, setMessages] = useState<API.ChatMessage[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [chatMode, setChatMode] = useState<'text' | 'voice'>('text');
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const sendMessage = async (content: string) => {
+    const response = await chatAPI.sendMessage({ content, roleId });
+    setMessages(prev => [...prev, response.userMessage, response.aiMessage]);
+  };
 };
 ```
 
@@ -256,7 +253,7 @@ declare namespace API {
 - **前端框架**: React 18 + TypeScript（继承现有架构）
 - **UI组件库**: Ant Design 5.x + Pro Components（继承现有）
 - **构建工具**: UmiJS 4.x（继承现有）
-- **状态管理**: UmiJS内置Model + React Hooks
+- **状态管理**: React Hooks + 页面级状态管理
 - **路由管理**: UmiJS内置路由系统
 
 ### 3.2 语音技术栈

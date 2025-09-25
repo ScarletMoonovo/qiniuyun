@@ -1,78 +1,50 @@
-# 需求规格说明书 - {spec-name}
+# Requirements Document
 
-## 1. 项目概述
+## Introduction
 
-### 1.1 项目背景
-[项目的背景和动机]
+[Provide a brief overview of the feature, its purpose, and its value to users]
 
-### 1.2 项目目标
-[项目要实现的主要目标]
+## Alignment with Product Vision
 
-### 1.3 项目范围
-[项目的边界和范围]
+[Explain how this feature supports the goals outlined in product.md]
 
-## 2. 用户需求
+## Requirements
 
-### 2.1 目标用户
-[目标用户群体描述]
+### Requirement 1
 
-### 2.2 用户场景
-[用户使用场景描述]
+**User Story:** As a [role], I want [feature], so that [benefit]
 
-### 2.3 用户故事
-[按EARS标准编写的用户故事]
+#### Acceptance Criteria
 
-## 3. 功能需求
+1. WHEN [event] THEN [system] SHALL [response]
+2. IF [precondition] THEN [system] SHALL [response]
+3. WHEN [event] AND [condition] THEN [system] SHALL [response]
 
-### 3.1 核心功能
-[核心功能列表和描述]
+### Requirement 2
 
-### 3.2 辅助功能
-[辅助功能列表和描述]
+**User Story:** As a [role], I want [feature], so that [benefit]
 
-### 3.3 功能优先级
-[功能优先级排序]
+#### Acceptance Criteria
 
-## 4. 非功能需求
+1. WHEN [event] THEN [system] SHALL [response]
+2. IF [precondition] THEN [system] SHALL [response]
 
-### 4.1 性能需求
-[性能相关需求]
+## Non-Functional Requirements
 
-### 4.2 安全需求
-[安全相关需求]
+### Code Architecture and Modularity
+- **Single Responsibility Principle**: Each file should have a single, well-defined purpose
+- **Modular Design**: Components, utilities, and services should be isolated and reusable
+- **Dependency Management**: Minimize interdependencies between modules
+- **Clear Interfaces**: Define clean contracts between components and layers
 
-### 4.3 可用性需求
-[可用性相关需求]
+### Performance
+- [Performance requirements]
 
-### 4.4 兼容性需求
-[兼容性相关需求]
+### Security
+- [Security requirements]
 
-## 5. 约束条件
+### Reliability
+- [Reliability requirements]
 
-### 5.1 技术约束
-[技术限制和约束]
-
-### 5.2 资源约束
-[资源限制]
-
-### 5.3 时间约束
-[时间限制]
-
-## 6. 验收标准
-
-### 6.1 功能验收标准
-[功能验收的具体标准]
-
-### 6.2 性能验收标准
-[性能验收的具体标准]
-
-## 7. 风险评估
-
-### 7.1 技术风险
-[技术实现风险]
-
-### 7.2 业务风险
-[业务相关风险]
-
-### 7.3 风险缓解措施
-[风险应对策略]
+### Usability
+- [Usability requirements]
