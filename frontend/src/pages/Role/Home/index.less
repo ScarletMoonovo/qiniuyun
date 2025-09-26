@@ -1,0 +1,169 @@
+.role-home-page {
+  // 我的角色横向滚动区域
+  .my-roles-scroll {
+    &::-webkit-scrollbar {
+      height: 6px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 3px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 3px;
+      
+      &:hover {
+        background: #a8a8a8;
+      }
+    }
+  }
+
+  // 我的角色卡片样式
+  .my-role-card {
+    transition: all 0.3s ease;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+    
+    .role-info {
+      .role-name {
+        font-weight: 600;
+        font-size: 16px;
+        margin-bottom: 4px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      
+      .role-description {
+        color: #666;
+        font-size: 13px;
+        margin-bottom: 8px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.4;
+      }
+    }
+    
+    .role-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+  }
+
+  // 标签筛选器样式
+  .category-filters {
+    .ant-tag {
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.3s ease;
+      border-radius: 16px;
+      padding: 4px 12px;
+      font-size: 13px;
+      
+      &:hover {
+        transform: translateY(-1px);
+      }
+      
+      &.ant-tag-checkable-checked {
+        background-color: #1890ff;
+        border-color: #1890ff;
+        color: #fff;
+      }
+    }
+  }
+
+  // 角色网格样式
+  .role-grid {
+    .ant-col {
+      margin-bottom: 16px;
+    }
+  }
+
+  // 段落标题样式
+  .section-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    
+    .ant-typography {
+      margin: 0;
+      
+      .anticon {
+        margin-right: 8px;
+      }
+    }
+  }
+
+  // 加载更多按钮
+  .load-more-btn {
+    text-align: center;
+    margin-top: 32px;
+  }
+}
+
+// 响应式适配
+@media (max-width: 768px) {
+  .role-home-page {
+    // 移动端我的角色卡片调整
+    .my-role-card {
+      width: 280px !important;
+      
+      .ant-card-body {
+        padding: 12px;
+      }
+      
+      .role-info {
+        .role-name {
+          font-size: 14px;
+        }
+        
+        .role-description {
+          font-size: 12px;
+        }
+      }
+    }
+    
+    // 移动端段落标题调整
+    .section-title {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+      
+      .category-filters {
+        width: 100%;
+        
+        .ant-tag {
+          margin-bottom: 8px;
+        }
+      }
+    }
+  }
+}
+
+// 空状态样式
+.empty-state {
+  .ant-empty {
+    padding: 40px 20px;
+  }
+}
+
+// 搜索结果样式
+.search-results {
+  .search-title {
+    margin-bottom: 24px;
+    
+    .anticon {
+      margin-right: 8px;
+      color: #1890ff;
+    }
+  }
+}

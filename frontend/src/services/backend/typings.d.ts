@@ -21,6 +21,19 @@ declare namespace API {
     updated_at: number;
   };
 
+  type chatParams = {
+    session_id: number;
+  };
+
+  type getSessionParams = {
+    cursor: number;
+    pageSize: number;
+  };
+
+  type GetSessionResponse = {
+    sessions: Session[];
+  };
+
   type getUserByNameParams = {
     name: string;
     cursor: number;
@@ -57,12 +70,22 @@ declare namespace API {
     avatar: string;
     description: string;
     open_line: string;
+    voice: number;
     tags: number[];
     is_public: boolean;
   };
 
   type NewCharacterResponse = {
     character: Character;
+  };
+
+  type NewSessionRequest = {
+    character_id: number;
+    title: string;
+  };
+
+  type NewSessionResponse = {
+    session_id: number;
   };
 
   type RefreshResponse = {
@@ -81,6 +104,25 @@ declare namespace API {
     id: number;
     accessToken: string;
     refreshToken: string;
+  };
+
+  type Session = {
+    session_id: number;
+    user_id: number;
+    character_id: number;
+    title: string;
+    created_at: number;
+    updated_at: number;
+  };
+
+  type Tag = {
+    id: number;
+    name: string;
+  };
+
+  type UploadTokenResponse = {
+    token: string;
+    key: string;
   };
 
   type User = {
@@ -322,6 +364,35 @@ declare namespace API {
     };
   };
 
+  // Character相关类型定义
+  type NewCharacterRequest = {
+    name: string;
+    avatar?: string;
+    description: string;
+    category: string;
+    tags: string[];
+    personality: string;
+    background: string;
+    quotes: string[];
+    voiceStyle: string;
+  };
+
+  type NewCharacterResponse = {
+    id: number;
+    name: string;
+    avatar?: string;
+    description: string;
+    category: string;
+    tags: string[];
+    personality: string;
+    background: string;
+    quotes: string[];
+    voiceStyle: string;
+    popularity: number;
+    createdAt: string;
+    updatedAt: string;
+    creatorId: number;
+  };
 
   // 通用响应类型
   type BaseResponse<T = any> = {
