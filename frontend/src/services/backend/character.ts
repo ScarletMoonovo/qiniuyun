@@ -2,7 +2,7 @@
 /* eslint-disable */
 import { request } from '@umijs/max';
 
-/** 此处后端没有提供注释 POST /character */
+/** 此处后端没有提供注释 POST /api/character */
 export async function newCharacter(
   body: API.NewCharacterRequest,
   options?: { [key: string]: any },
