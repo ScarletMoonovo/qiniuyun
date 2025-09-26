@@ -1,150 +1,82 @@
 import { PageContainer } from '@ant-design/pro-components';
-import { Card, Row, Col, Button, Typography, Space, Empty, Avatar, Spin } from 'antd';
-import { PlusOutlined, UserOutlined, RobotOutlined } from '@ant-design/icons';
+import { 
+  Card, 
+  Row, 
+  Col, 
+  Button, 
+  Typography, 
+  Space, 
+  Empty, 
+  Spin, 
+  Input, 
+  Select, 
+  Tabs, 
+  message,
+  Modal
+} from 'antd';
+import { 
+  PlusOutlined, 
+  UserOutlined, 
+  RobotOutlined, 
+  SearchOutlined,
+  FilterOutlined,
+  ExclamationCircleOutlined
+} from '@ant-design/icons';
 import { history } from 'umi';
 import { useEffect, useState } from 'react';
+import { RoleCard } from '@/components/Role';
+import { getMyRoles, getRoleList, searchRoles, deleteRole } from '@/services/backend/role';
 
-const { Title, Paragraph } = Typography;
+const { Title } = Typography;
+const { Search } = Input;
+const { Option } = Select;
 
-// 临时模拟数据，待状态管理完善后移除
-const mockMyRoles: API.Role[] = [
-  {
-    id: 10,
-    name: '智能助手小爱',
-    avatar: '',
-    description: '一个温柔体贴的AI助手，可以帮助你处理日常事务',
-    category: 'assistant',
-    tags: ['助手', '温柔', '贴心'],
-    personality: '温柔、体贴、高效',
-    background: '专为用户日常生活服务的智能助手',
-    quotes: ['你好！我是小爱，有什么可以帮助你的吗？'],
-    voiceStyle: 'gentle_female',
-    popularity: 0,
-    createdAt: '2024-01-15T10:30:00Z',
-    updatedAt: '2024-01-15T10:30:00Z',
-    creatorId: 100,
-  },
+// 角色分类选项
+const roleCategories = [
+  { label: '全部分类', value: '' },
+  { label: '智能助手', value: 'assistant' },
+  { label: '教育导师', value: 'education' },
+  { label: '心理咨询', value: 'counselor' },
+  { label: '创意伙伴', value: 'creative' },
+  { label: '生活顾问', value: 'lifestyle' },
+  { label: '专业顾问', value: 'professional' },
+  { label: '娱乐陪伴', value: 'entertainment' },
+  { label: '其他', value: 'other' },
 ];
 
-const mockDiscoverRoles: API.Role[] = [
-  {
-    id: 1,
-    name: '心理咨询师',
-    avatar: '',
-    description: '专业的心理咨询师，能够倾听和理解你的困扰',
-    category: 'counselor',
-    tags: ['心理', '倾听', '专业'],
-    personality: '温柔、耐心、专业',
-    background: '拥有10年心理咨询经验的专业咨询师',
-    quotes: ['你好，我是你的心理咨询师，有什么困扰可以和我分享'],
-    voiceStyle: 'gentle_female',
-    popularity: 128,
-    createdAt: '2024-01-15T10:30:00Z',
-    updatedAt: '2024-01-15T10:30:00Z',
-    creatorId: 1,
-    creator: { id: 1, name: '用户A', avatar: '', birthday: undefined, sex: undefined, signature: undefined },
-  },
-  {
-    id: 2,
-    name: '编程导师',
-    avatar: '',
-    description: '经验丰富的编程老师，可以指导各种编程问题',
-    category: 'education',
-    tags: ['编程', '教学', '技术'],
-    personality: '严谨、逻辑清晰、有耐心',
-    background: '资深软件工程师，有丰富的教学经验',
-    quotes: ['Hello! 我是你的编程导师，让我们一起探索代码的世界'],
-    voiceStyle: 'mature_male',
-    popularity: 95,
-    createdAt: '2024-01-14T15:20:00Z',
-    updatedAt: '2024-01-14T15:20:00Z',
-    creatorId: 2,
-    creator: { id: 2, name: '用户B', avatar: '', birthday: undefined, sex: undefined, signature: undefined },
-  },
+// 排序选项
+const sortOptions = [
+  { label: '最新创建', value: 'created_desc' },
+  { label: '最受欢迎', value: 'popularity_desc' },
+  { label: '名称排序', value: 'name_asc' },
 ];
-
-const RoleCard: React.FC<{
-  role: API.Role;
-  showCreator?: boolean;
-  onEdit?: (role: API.Role) => void;
-  onChat?: (role: API.Role) => void;
-  onView?: (role: API.Role) => void;
-}> = ({ role, showCreator = false, onEdit, onChat, onView }) => {
-  return (
-    <Card
-      hoverable
-      style={{ height: '100%' }}
-      cover={
-        <div style={{ 
-          height: 120, 
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center' 
-        }}>
-          <Avatar size={60} icon={<RobotOutlined />} />
-        </div>
-      }
-      actions={[
-        <Button 
-          type="link" 
-          onClick={() => onView?.(role)}
-        >
-          查看详情
-        </Button>,
-        <Button 
-          type="link" 
-          onClick={() => onChat?.(role)}
-        >
-          开始聊天
-        </Button>,
-        ...(onEdit ? [
-          <Button 
-            type="link" 
-            onClick={() => onEdit(role)}
-          >
-            编辑
-          </Button>
-        ] : [])
-      ]}
-    >
-      <Card.Meta
-        title={role.name}
-        description={
-          <div>
-            <Paragraph ellipsis={{ rows: 2 }} style={{ marginBottom: 8 }}>
-              {role.description}
-            </Paragraph>
-            <Space wrap>
-              {role.tags?.slice(0, 3).map((tag: string) => (
-                <span key={tag} style={{ 
-                  background: '#f0f0f0', 
-                  padding: '2px 8px', 
-                  borderRadius: '12px', 
-                  fontSize: '12px',
-                  color: '#666'
-                }}>
-                  {tag}
-                </span>
-              ))}
-            </Space>
-            {showCreator && role.creator && (
-              <div style={{ marginTop: 8, fontSize: '12px', color: '#999' }}>
-                创建者: {role.creator.name} • 热度: {role.popularity}
-              </div>
-            )}
-          </div>
-        }
-      />
-    </Card>
-  );
-};
 
 const RoleHome: React.FC = () => {
+  // 状态管理
+  const [activeTab, setActiveTab] = useState('discover');
   const [myRoles, setMyRoles] = useState<API.Role[]>([]);
   const [discoverRoles, setDiscoverRoles] = useState<API.Role[]>([]);
-  const [loading, setLoading] = useState({ myRoles: true, roleList: true });
+  const [searchResults, setSearchResults] = useState<API.Role[]>([]);
+  const [loading, setLoading] = useState({ 
+    myRoles: false, 
+    discover: false, 
+    search: false 
+  });
+  
+  // 搜索和筛选状态
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedSort, setSelectedSort] = useState('created_desc');
+  const [isSearchMode, setIsSearchMode] = useState(false);
 
+  // 分页状态
+  const [pagination, setPagination] = useState({
+    myRoles: { page: 1, pageSize: 8, total: 0, hasMore: true },
+    discover: { page: 1, pageSize: 12, total: 0, hasMore: true },
+    search: { page: 1, pageSize: 12, total: 0, hasMore: true },
+  });
+
+  // 事件处理函数
   const handleCreateRole = () => {
     history.push('/role/create');
   };
@@ -161,20 +93,269 @@ const RoleHome: React.FC = () => {
     history.push(`/role/detail/${role.id}`);
   };
 
-  useEffect(() => {
-    // 模拟加载数据
-    setLoading({ myRoles: true, roleList: true });
-    
-    setTimeout(() => {
-      setMyRoles(mockMyRoles);
-      setLoading(prev => ({ ...prev, myRoles: false }));
-    }, 1000);
+  const handleDeleteRole = (role: API.Role) => {
+    Modal.confirm({
+      title: '确认删除',
+      icon: <ExclamationCircleOutlined />,
+      content: `确定要删除角色"${role.name}"吗？此操作不可恢复。`,
+      okText: '确认删除',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          await deleteRole(role.id);
+          message.success('角色删除成功');
+          // 重新加载我的角色列表
+          loadMyRoles();
+        } catch (error: any) {
+          message.error(error?.message || '删除角色失败');
+        }
+      },
+    });
+  };
 
-    setTimeout(() => {
-      setDiscoverRoles(mockDiscoverRoles);
-      setLoading(prev => ({ ...prev, roleList: false }));
-    }, 1200);
+  // 数据加载函数
+  const loadMyRoles = async (page = 1) => {
+    try {
+      setLoading(prev => ({ ...prev, myRoles: true }));
+      const response = await getMyRoles({
+        page,
+        pageSize: pagination.myRoles.pageSize,
+      });
+      
+      if (response) {
+        if (page === 1) {
+          setMyRoles(response.roles || []);
+        } else {
+          setMyRoles(prev => [...prev, ...(response.roles || [])]);
+        }
+        
+        setPagination(prev => ({
+          ...prev,
+          myRoles: {
+            ...prev.myRoles,
+            page,
+            total: response.total || 0,
+            hasMore: response.hasMore || false,
+          }
+        }));
+      }
+    } catch (error: any) {
+      console.error('加载我的角色失败:', error);
+      message.error('加载我的角色失败');
+    } finally {
+      setLoading(prev => ({ ...prev, myRoles: false }));
+    }
+  };
+
+  const loadDiscoverRoles = async (page = 1) => {
+    try {
+      setLoading(prev => ({ ...prev, discover: true }));
+      const response = await getRoleList({
+        page,
+        pageSize: pagination.discover.pageSize,
+        category: selectedCategory || undefined,
+      });
+      
+      if (response) {
+        if (page === 1) {
+          setDiscoverRoles(response.roles || []);
+        } else {
+          setDiscoverRoles(prev => [...prev, ...(response.roles || [])]);
+        }
+        
+        setPagination(prev => ({
+          ...prev,
+          discover: {
+            ...prev.discover,
+            page,
+            total: response.total || 0,
+            hasMore: response.hasMore || false,
+          }
+        }));
+      }
+    } catch (error: any) {
+      console.error('加载发现角色失败:', error);
+      message.error('加载角色列表失败');
+    } finally {
+      setLoading(prev => ({ ...prev, discover: false }));
+    }
+  };
+
+  const performSearch = async (keyword: string, page = 1) => {
+    if (!keyword.trim()) {
+      setIsSearchMode(false);
+      return;
+    }
+
+    try {
+      setLoading(prev => ({ ...prev, search: true }));
+      setIsSearchMode(true);
+      
+      const response = await searchRoles({
+        keyword: keyword.trim(),
+        category: selectedCategory || undefined,
+        page,
+        pageSize: pagination.search.pageSize,
+      });
+      
+      if (response) {
+        if (page === 1) {
+          setSearchResults(response.roles || []);
+        } else {
+          setSearchResults(prev => [...prev, ...(response.roles || [])]);
+        }
+        
+        setPagination(prev => ({
+          ...prev,
+          search: {
+            ...prev.search,
+            page,
+            total: response.total || 0,
+            hasMore: response.hasMore || false,
+          }
+        }));
+      }
+    } catch (error: any) {
+      console.error('搜索角色失败:', error);
+      message.error('搜索失败，请重试');
+    } finally {
+      setLoading(prev => ({ ...prev, search: false }));
+    }
+  };
+
+  // 搜索处理
+  const handleSearch = (value: string) => {
+    setSearchKeyword(value);
+    performSearch(value);
+  };
+
+  const handleClearSearch = () => {
+    setSearchKeyword('');
+    setIsSearchMode(false);
+    setSearchResults([]);
+  };
+
+  // 筛选处理
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    if (isSearchMode && searchKeyword) {
+      performSearch(searchKeyword);
+    } else {
+      loadDiscoverRoles();
+    }
+  };
+
+  // 初始化数据加载
+  useEffect(() => {
+    loadMyRoles();
+    loadDiscoverRoles();
   }, []);
+
+  // 分页加载更多
+  const handleLoadMore = (type: 'myRoles' | 'discover' | 'search') => {
+    const currentPagination = pagination[type];
+    if (!currentPagination.hasMore) return;
+
+    const nextPage = currentPagination.page + 1;
+    
+    switch (type) {
+      case 'myRoles':
+        loadMyRoles(nextPage);
+        break;
+      case 'discover':
+        loadDiscoverRoles(nextPage);
+        break;
+      case 'search':
+        performSearch(searchKeyword, nextPage);
+        break;
+    }
+  };
+
+  // 渲染角色网格
+  const renderRoleGrid = (roles: API.Role[], type: 'myRoles' | 'discover' | 'search') => {
+    const isLoading = loading[type === 'search' ? 'search' : type === 'myRoles' ? 'myRoles' : 'discover'];
+    const currentPagination = pagination[type];
+
+    if (isLoading && roles.length === 0) {
+      return (
+        <div style={{ textAlign: 'center', padding: '50px' }}>
+          <Spin size="large" />
+        </div>
+      );
+    }
+
+    if (roles.length === 0) {
+      const emptyConfig = {
+        myRoles: {
+          description: '您还没有创建任何角色',
+          buttonText: '创建第一个角色',
+          action: handleCreateRole,
+        },
+        discover: {
+          description: '暂无角色数据',
+          buttonText: '刷新页面',
+          action: () => loadDiscoverRoles(),
+        },
+        search: {
+          description: `没有找到与"${searchKeyword}"相关的角色`,
+          buttonText: '清除搜索',
+          action: handleClearSearch,
+        },
+      };
+
+      const config = emptyConfig[type];
+      return (
+        <Card>
+          <Empty 
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={config.description}
+          >
+            <Button 
+              type="primary" 
+              icon={type === 'myRoles' ? <PlusOutlined /> : undefined}
+              onClick={config.action}
+            >
+              {config.buttonText}
+            </Button>
+          </Empty>
+        </Card>
+      );
+    }
+
+    return (
+      <>
+        <Row gutter={[16, 16]}>
+          {roles.map((role) => (
+            <Col xs={24} sm={12} md={8} lg={6} key={role.id}>
+              <RoleCard 
+                role={role} 
+                showCreator={type !== 'myRoles'}
+                showOwnerActions={type === 'myRoles'}
+                onEdit={type === 'myRoles' ? handleEditRole : undefined}
+                onChat={handleChatWithRole}
+                onView={handleViewRoleDetail}
+                onDelete={type === 'myRoles' ? handleDeleteRole : undefined}
+              />
+            </Col>
+          ))}
+        </Row>
+        
+        {/* 加载更多按钮 */}
+        {currentPagination.hasMore && (
+          <div style={{ textAlign: 'center', marginTop: 32 }}>
+            <Button 
+              size="large"
+              loading={isLoading}
+              onClick={() => handleLoadMore(type)}
+            >
+              加载更多 ({currentPagination.total - roles.length} 个剩余)
+            </Button>
+          </div>
+        )}
+      </>
+    );
+  };
 
   return (
     <PageContainer
@@ -182,95 +363,109 @@ const RoleHome: React.FC = () => {
       style={{ padding: '24px' }}
     >
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        {/* 我的角色部分 */}
-        <div style={{ marginBottom: 48 }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            marginBottom: 24 
-          }}>
-            <Title level={2} style={{ margin: 0 }}>
-              <UserOutlined style={{ marginRight: 8, color: '#1890ff' }} />
-              我的角色
-            </Title>
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />} 
-              onClick={handleCreateRole}
-              size="large"
-            >
-              创建新角色
-            </Button>
-          </div>
-          
-          {loading.myRoles ? (
-            <div style={{ textAlign: 'center', padding: '50px' }}>
-              <Spin size="large" />
-            </div>
-          ) : myRoles.length > 0 ? (
-            <Row gutter={[16, 16]}>
-              {myRoles.map((role) => (
-                <Col xs={24} sm={12} md={8} lg={6} key={role.id}>
-                  <RoleCard 
-                    role={role} 
-                    onEdit={handleEditRole}
-                    onChat={handleChatWithRole}
-                    onView={handleViewRoleDetail}
-                  />
-                </Col>
-              ))}
-            </Row>
-          ) : (
-            <Card>
-              <Empty 
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description="您还没有创建任何角色"
+        {/* 搜索和筛选区域 */}
+        <Card style={{ marginBottom: 24 }}>
+          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+            {/* 搜索框 */}
+            <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+              <Search
+                placeholder="搜索角色名称、描述或标签..."
+                allowClear
+                enterButton={<SearchOutlined />}
+                size="large"
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                onSearch={handleSearch}
+                onClear={handleClearSearch}
+                style={{ flex: 1 }}
+              />
+              <Button 
+                type="primary" 
+                icon={<PlusOutlined />} 
+                onClick={handleCreateRole}
+                size="large"
               >
-                <Button 
-                  type="primary" 
-                  icon={<PlusOutlined />} 
-                  onClick={handleCreateRole}
-                >
-                  创建第一个角色
-                </Button>
-              </Empty>
-            </Card>
-          )}
-        </div>
-
-        {/* 发现角色部分 */}
-        <div>
-          <Title level={2} style={{ marginBottom: 24 }}>
-            <RobotOutlined style={{ marginRight: 8, color: '#52c41a' }} />
-            发现角色
-          </Title>
-          
-          {loading.roleList ? (
-            <div style={{ textAlign: 'center', padding: '50px' }}>
-              <Spin size="large" />
+                创建角色
+              </Button>
             </div>
-          ) : (
-            <Row gutter={[16, 16]}>
-              {discoverRoles.map((role) => (
-                <Col xs={24} sm={12} md={8} lg={6} key={role.id}>
-                  <RoleCard 
-                    role={role} 
-                    showCreator={true}
-                    onChat={handleChatWithRole}
-                    onView={handleViewRoleDetail}
-                  />
-                </Col>
-              ))}
-            </Row>
-          )}
-          
-          <div style={{ textAlign: 'center', marginTop: 32 }}>
-            <Button size="large">
-              查看更多角色
-            </Button>
+            
+            {/* 筛选器 */}
+            <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+              <FilterOutlined style={{ color: '#666' }} />
+              <Select
+                value={selectedCategory}
+                onChange={handleCategoryChange}
+                style={{ width: 120 }}
+                placeholder="分类"
+              >
+                {roleCategories.map(category => (
+                  <Option key={category.value} value={category.value}>
+                    {category.label}
+                  </Option>
+                ))}
+              </Select>
+              <Select
+                value={selectedSort}
+                onChange={setSelectedSort}
+                style={{ width: 120 }}
+                placeholder="排序"
+              >
+                {sortOptions.map(option => (
+                  <Option key={option.value} value={option.value}>
+                    {option.label}
+                  </Option>
+                ))}
+              </Select>
+              
+              {isSearchMode && (
+                <Button onClick={handleClearSearch}>
+                  清除搜索
+                </Button>
+              )}
+            </div>
+          </Space>
+        </Card>
+
+        {/* 内容区域 */}
+        {isSearchMode ? (
+          /* 搜索结果 */
+          <div>
+            <Title level={3} style={{ marginBottom: 24 }}>
+              <SearchOutlined style={{ marginRight: 8, color: '#1890ff' }} />
+              搜索结果 ({pagination.search.total} 个)
+            </Title>
+            {renderRoleGrid(searchResults, 'search')}
           </div>
-        </div>
+        ) : (
+          /* 标签页内容 */
+          <Tabs 
+            activeKey={activeTab} 
+            onChange={setActiveTab}
+            size="large"
+            items={[
+              {
+                key: 'discover',
+                label: (
+                  <span>
+                    <RobotOutlined />
+                    发现角色 ({pagination.discover.total})
+                  </span>
+                ),
+                children: renderRoleGrid(discoverRoles, 'discover'),
+              },
+              {
+                key: 'myRoles',
+                label: (
+                  <span>
+                    <UserOutlined />
+                    我的角色 ({pagination.myRoles.total})
+                  </span>
+                ),
+                children: renderRoleGrid(myRoles, 'myRoles'),
+              },
+            ]}
+          />
+        )}
       </div>
     </PageContainer>
   );

@@ -1,19 +1,17 @@
 import { PageContainer, ProForm, ProFormText, ProFormTextArea, ProFormSelect } from '@ant-design/pro-components';
-import { Card, Row, Col, Button, Space, message, Upload, Avatar, Tag, Input } from 'antd';
+import { Card, Row, Col, Button, Space, message, Upload, Avatar, Tag, Input, Spin } from 'antd';
 import { PlusOutlined, UserOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { history } from 'umi';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { UploadProps } from 'antd';
+import { createRole, getVoiceModels } from '@/services/backend/role';
 
-// 预设的声音模型
-const voiceModels = [
-  { label: '温柔女声', value: 'gentle_female', description: '温柔甜美的女性声音' },
-  { label: '成熟男声', value: 'mature_male', description: '沉稳有力的男性声音' },
-  { label: '活泼女声', value: 'lively_female', description: '活泼可爱的女性声音' },
-  { label: '磁性男声', value: 'magnetic_male', description: '富有磁性的男性声音' },
-  { label: '知性女声', value: 'intellectual_female', description: '知性优雅的女性声音' },
-  { label: '阳光男声', value: 'sunny_male', description: '阳光开朗的男性声音' },
-];
+// 声音模型选项类型
+type VoiceModelOption = {
+  label: string;
+  value: string;
+  description: string;
+};
 
 // 角色分类
 const roleCategories = [
@@ -32,7 +30,35 @@ const RoleCreate: React.FC = () => {
   const [tags, setTags] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [avatar, setAvatar] = useState<string>('');
+  const [voiceModels, setVoiceModels] = useState<VoiceModelOption[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [voiceModelsLoading, setVoiceModelsLoading] = useState(true);
   const inputRef = useRef<any>(null);
+
+  // 获取声音模型列表
+  useEffect(() => {
+    const fetchVoiceModels = async () => {
+      try {
+        setVoiceModelsLoading(true);
+        const response = await getVoiceModels();
+        if (response.models) {
+          const modelOptions: VoiceModelOption[] = response.models.map((model: API.VoiceModel) => ({
+            label: model.name,
+            value: model.id,
+            description: model.description,
+          }));
+          setVoiceModels(modelOptions);
+        }
+      } catch (error) {
+        console.error('获取声音模型失败:', error);
+        message.error('获取声音模型失败，请刷新重试');
+      } finally {
+        setVoiceModelsLoading(false);
+      }
+    };
+
+    fetchVoiceModels();
+  }, []);
 
   const handleBack = () => {
     history.back();
@@ -51,21 +77,37 @@ const RoleCreate: React.FC = () => {
 
   const handleSubmit = async (values: any) => {
     try {
-      const roleData = {
-        ...values,
+      setLoading(true);
+      
+      // 构建角色创建请求数据
+      const roleData: API.CreateRoleRequest = {
+        name: values.name,
+        description: values.description,
+        category: values.category,
+        personality: values.personality,
+        background: values.background,
+        voiceStyle: values.voiceStyle,
+        quotes: values.quotes ? values.quotes.split('\n').filter((q: string) => q.trim()) : [],
         tags,
-        avatar,
+        avatar: avatar || undefined,
       };
       
       console.log('创建角色数据:', roleData);
       
-      // 这里应该调用API创建角色
-      // await createRole(roleData);
+      // 调用API创建角色
+      const response = await createRole(roleData);
       
-      message.success('角色创建成功！');
-      history.push('/home');
-    } catch (error) {
-      message.error('创建角色失败，请重试');
+      if (response) {
+        message.success('角色创建成功！');
+        // 跳转到角色详情页或角色列表页
+        history.push('/role/home');
+      }
+    } catch (error: any) {
+      console.error('创建角色失败:', error);
+      const errorMessage = error?.message || '创建角色失败，请重试';
+      message.error(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -108,6 +150,7 @@ const RoleCreate: React.FC = () => {
       <Row justify="center">
         <Col xs={24} sm={20} md={16} lg={12} xl={10}>
           <Card>
+            <Spin spinning={voiceModelsLoading && voiceModels.length === 0} tip="加载声音模型中...">
             <ProForm
               form={form}
               layout="vertical"
@@ -119,10 +162,16 @@ const RoleCreate: React.FC = () => {
                 render: (_, dom) => (
                   <div style={{ textAlign: 'center', marginTop: 32 }}>
                     <Space size="large">
-                      <Button onClick={handleBack}>
+                      <Button onClick={handleBack} disabled={loading}>
                         取消
                       </Button>
-                      {dom[1]}
+                      <Button 
+                        type="primary" 
+                        loading={loading}
+                        onClick={() => form.submit()}
+                      >
+                        创建角色
+                      </Button>
                     </Space>
                   </div>
                 ),
@@ -254,15 +303,17 @@ const RoleCreate: React.FC = () => {
               <ProFormSelect
                 name="voiceStyle"
                 label="声音模型"
-                placeholder="请选择声音模型"
+                placeholder={voiceModelsLoading ? "加载中..." : "请选择声音模型"}
                 options={voiceModels}
                 rules={[{ required: true, message: '请选择声音模型' }]}
                 fieldProps={{
+                  loading: voiceModelsLoading,
+                  disabled: voiceModelsLoading,
                   optionRender: (option) => (
                     <div>
                       <div style={{ fontWeight: 500 }}>{option.label}</div>
                       <div style={{ fontSize: '12px', color: '#666' }}>
-                        {option.data.description}
+                        {option.data?.description || ''}
                       </div>
                     </div>
                   ),
@@ -281,6 +332,7 @@ const RoleCreate: React.FC = () => {
                 }}
               />
             </ProForm>
+            </Spin>
           </Card>
         </Col>
       </Row>
