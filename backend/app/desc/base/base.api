@@ -6,6 +6,15 @@ info(
 )
 
 type (
+    Tag {
+        Id int64 `json:"id"`
+        Name string `json:"name"`
+    }
+)
+
+
+// 生成上传token
+type (
     UploadTokenResponse {
         Token string `json:"token"`
         Key string `json:"key"`
@@ -21,4 +30,13 @@ type (
 service api {
     @handler uploadToken      //生成客户端上传凭证
     post /upload/token returns (UploadTokenResponse)
+}
+
+@server(
+    prefix: api
+)
+
+service api {
+    @handler getTags
+    get /tags returns ([]Tag)
 }

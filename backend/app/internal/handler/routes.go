@@ -4,6 +4,8 @@ package handler
 import (
 	"net/http"
 
+	character "qiniuyun/backend/app/internal/handler/character"
+	chat "qiniuyun/backend/app/internal/handler/chat"
 	user "qiniuyun/backend/app/internal/handler/user"
 	"qiniuyun/backend/app/internal/svc"
 
@@ -11,6 +13,69 @@ import (
 )
 
 func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
+	server.AddRoutes(
+		rest.WithMiddlewares(
+			[]rest.Middleware{serverCtx.Auth},
+			[]rest.Route{
+				{
+					Method:  http.MethodPost,
+					Path:    "/upload/token",
+					Handler: uploadTokenHandler(serverCtx),
+				},
+			}...,
+		),
+		rest.WithPrefix("/api"),
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodGet,
+				Path:    "/tags",
+				Handler: getTagsHandler(serverCtx),
+			},
+		},
+		rest.WithPrefix("/api"),
+	)
+
+	server.AddRoutes(
+		rest.WithMiddlewares(
+			[]rest.Middleware{serverCtx.Auth},
+			[]rest.Route{
+				{
+					Method:  http.MethodPost,
+					Path:    "/character",
+					Handler: character.NewCharacterHandler(serverCtx),
+				},
+			}...,
+		),
+		rest.WithPrefix("/api"),
+	)
+
+	server.AddRoutes(
+		rest.WithMiddlewares(
+			[]rest.Middleware{serverCtx.Auth},
+			[]rest.Route{
+				{
+					Method:  http.MethodGet,
+					Path:    "/chat",
+					Handler: chat.ChatHandler(serverCtx),
+				},
+				{
+					Method:  http.MethodPost,
+					Path:    "/session",
+					Handler: chat.NewSessionHandler(serverCtx),
+				},
+				{
+					Method:  http.MethodGet,
+					Path:    "/session",
+					Handler: chat.GetSessionHandler(serverCtx),
+				},
+			}...,
+		),
+		rest.WithPrefix("/api"),
+	)
+
 	server.AddRoutes(
 		rest.WithMiddlewares(
 			[]rest.Middleware{serverCtx.Token},
