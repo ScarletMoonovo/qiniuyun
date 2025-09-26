@@ -1,0 +1,277 @@
+.message-item {
+  margin-bottom: 16px;
+  padding: 0 16px;
+  
+  .message-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .message-avatar {
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+
+  .message-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .message-header {
+    margin-bottom: 6px;
+    
+    .sender-name {
+      font-size: 14px;
+      color: rgba(0, 0, 0, 0.85);
+    }
+    
+    .message-time {
+      font-size: 12px;
+      color: rgba(0, 0, 0, 0.45);
+    }
+  }
+
+  .message-bubble {
+    position: relative;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background-color: #f5f5f5;
+    max-width: 70%;
+    word-wrap: break-word;
+    word-break: break-word;
+    
+    .text-content {
+      .message-text {
+        font-size: 14px;
+        line-height: 1.5;
+        color: rgba(0, 0, 0, 0.85);
+      }
+    }
+
+    .voice-controls {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      
+      .voice-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background-color: rgba(0, 0, 0, 0.06);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        
+        &:hover {
+          background-color: rgba(0, 0, 0, 0.12);
+        }
+        
+        &.playing {
+          background-color: #e6f7ff;
+          color: #1890ff;
+        }
+        
+        &.loading {
+          background-color: #f6ffed;
+          color: #52c41a;
+        }
+      }
+    }
+
+    .message-status {
+      margin-top: 6px;
+      display: flex;
+      justify-content: flex-end;
+    }
+  }
+
+  // 用户消息样式
+  &.user-message {
+    .message-content {
+      flex-direction: row-reverse;
+    }
+    
+    .message-body {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+    
+    .message-header {
+      text-align: right;
+    }
+    
+    .message-bubble {
+      background-color: #1890ff;
+      color: #fff;
+      margin-left: auto;
+      
+      .message-text {
+        color: #fff;
+      }
+      
+      .voice-controls {
+        .voice-button {
+          background-color: rgba(255, 255, 255, 0.2);
+          color: #fff;
+          
+          &:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+          }
+          
+          &.playing {
+            background-color: rgba(255, 255, 255, 0.3);
+            color: #fff;
+          }
+        }
+      }
+    }
+  }
+
+  // 角色消息样式
+  &.role-message {
+    .message-bubble {
+      background-color: #fff;
+      border: 1px solid #f0f0f0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+  }
+}
+
+// 连续消息优化（相同发送者的连续消息）
+.message-item + .message-item {
+  &.same-sender {
+    margin-top: -8px;
+    
+    .message-avatar {
+      visibility: hidden;
+    }
+    
+    .message-header {
+      display: none;
+    }
+    
+    .message-bubble {
+      margin-top: 4px;
+    }
+  }
+}
+
+// 响应式适配
+@media (max-width: 768px) {
+  .message-item {
+    padding: 0 12px;
+    margin-bottom: 12px;
+    
+    .message-content {
+      gap: 8px;
+    }
+    
+    .message-avatar {
+      .ant-avatar {
+        width: 32px !important;
+        height: 32px !important;
+      }
+    }
+    
+    .message-bubble {
+      max-width: 85%;
+      padding: 10px 12px;
+      font-size: 13px;
+      
+      .voice-controls {
+        .voice-button {
+          width: 24px;
+          height: 24px;
+        }
+      }
+    }
+  }
+}
+
+// 加载状态
+.message-item-loading {
+  .message-bubble {
+    background-color: #f5f5f5;
+    
+    .ant-skeleton {
+      .ant-skeleton-content {
+        .ant-skeleton-title {
+          margin-top: 0;
+          height: 16px;
+        }
+        
+        .ant-skeleton-paragraph {
+          margin-top: 8px;
+          
+          > li {
+            height: 14px;
+          }
+        }
+      }
+    }
+  }
+}
+
+// 错误状态
+.message-item-error {
+  .message-bubble {
+    background-color: #fff2f0;
+    border-color: #ffccc7;
+    
+    .message-text {
+      color: #ff4d4f;
+    }
+  }
+}
+
+// 动画效果
+.message-item {
+  animation: messageSlideIn 0.3s ease-out;
+}
+
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// 语音波形动画（可选）
+.voice-waveform {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  
+  .wave-bar {
+    width: 2px;
+    background-color: currentColor;
+    border-radius: 1px;
+    animation: waveAnimation 1.2s ease-in-out infinite;
+    
+    &:nth-child(1) { height: 8px; animation-delay: 0s; }
+    &:nth-child(2) { height: 12px; animation-delay: 0.1s; }
+    &:nth-child(3) { height: 6px; animation-delay: 0.2s; }
+    &:nth-child(4) { height: 10px; animation-delay: 0.3s; }
+    &:nth-child(5) { height: 8px; animation-delay: 0.4s; }
+  }
+}
+
+@keyframes waveAnimation {
+  0%, 100% {
+    transform: scaleY(0.5);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}

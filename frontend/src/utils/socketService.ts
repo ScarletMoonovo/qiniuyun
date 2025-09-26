@@ -1,7 +1,7 @@
 /**
  * WebSocket服务类
  * 用于管理与后端的实时通信连接，支持文本消息和音频流传输
- * 
+ *
  * @example
  * ```typescript
  * const socketService = getSocketService('ws://localhost:3001');
@@ -47,13 +47,13 @@ export interface SocketEventHandlers {
   onMessage?: (message: API.WebSocketMessage) => void;
   /** 连接状态变化回调 */
   onStatusChange?: (status: ConnectionStatus) => void;
-  
+
   // 聊天消息处理器
   /** 聊天消息接收回调 */
   onChatMessage?: (message: API.ChatMessage, sessionId: string) => void;
   /** 输入状态变化回调 */
   onTypingStatus?: (roleId: number, sessionId: string, isTyping: boolean) => void;
-  
+
   // TTS音频流处理器
   /** TTS音频流接收回调 */
   onTTSAudio?: (roleId: number, sessionId: string, audioData: ArrayBuffer, isLast: boolean) => void;
@@ -66,25 +66,25 @@ export interface SocketEventHandlers {
 export class SocketService {
   /** WebSocket连接实例 */
   private socket: WebSocket | null = null;
-  
+
   /** 当前连接状态 */
   private status: ConnectionStatus = 'disconnected';
-  
+
   /** 服务配置选项 */
   private options: Required<SocketServiceOptions>;
-  
+
   /** 事件处理器集合 */
   private handlers: SocketEventHandlers = {};
-  
+
   /** 重连定时器 */
   private reconnectTimer: NodeJS.Timeout | null = null;
-  
+
   /** 心跳定时器 */
   private heartbeatTimer: NodeJS.Timeout | null = null;
-  
+
   /** 当前重连尝试次数 */
   private reconnectAttempts = 0;
-  
+
   /** 是否为手动关闭连接 */
   private isManualClose = false;
 
@@ -169,7 +169,7 @@ export class SocketService {
           this.setStatus('disconnected');
           this.stopHeartbeat();
           this.handlers.onDisconnect?.();
-          
+
           // 如果不是手动关闭，尝试重连
           if (!this.isManualClose && this.reconnectAttempts < this.options.maxReconnectAttempts) {
             this.scheduleReconnect();
@@ -329,7 +329,6 @@ export class SocketService {
     });
   }
 
-
   /**
    * 获取当前连接状态
    * @returns ConnectionStatus - 当前连接状态
@@ -379,7 +378,6 @@ export class SocketService {
    * @param message - WebSocket消息
    */
   private handleMessage(message: API.WebSocketMessage): void {
-
     // 处理心跳响应
     if (message.type === 'heartbeat' && message.payload === 'pong') {
       return;
@@ -389,32 +387,29 @@ export class SocketService {
     switch (message.type) {
       case 'chat_message':
         // 聊天消息
-        this.handlers.onChatMessage?.(
-          message.payload.message,
-          message.payload.sessionId
-        );
+        this.handlers.onChatMessage?.(message.payload.message, message.payload.sessionId);
         break;
-      
+
       case 'typing_start':
       case 'typing_stop':
         // 输入状态变化
         this.handlers.onTypingStatus?.(
           message.payload.roleId,
           message.payload.sessionId,
-          message.type === 'typing_start'
+          message.type === 'typing_start',
         );
         break;
-      
+
       case 'tts_audio':
         // TTS音频流消息
         this.handlers.onTTSAudio?.(
           message.payload.roleId,
           message.payload.sessionId,
           message.payload.audioData,
-          message.payload.isLast
+          message.payload.isLast,
         );
         break;
-      
+
       case 'error':
         console.error('WebSocket服务器错误:', message.payload);
         break;
@@ -423,7 +418,6 @@ export class SocketService {
     // 触发通用消息处理器
     this.handlers.onMessage?.(message as API.WebSocketMessage);
   }
-
 
   /**
    * 安排重连操作
@@ -462,7 +456,7 @@ export class SocketService {
    */
   private startHeartbeat(): void {
     this.stopHeartbeat();
-    
+
     this.heartbeatTimer = setInterval(() => {
       if (this.isConnected()) {
         this.sendMessage({
@@ -497,10 +491,10 @@ let socketServiceInstance: SocketService | null = null;
  * ```typescript
  * // 首次调用时提供URL
  * const service = getSocketService('ws://localhost:3001');
- * 
+ *
  * // 后续调用可以不提供URL
  * const sameService = getSocketService();
- * 
+ *
  * // 设置事件处理器并连接
  * service.setHandlers({
  *   onConnect: () => console.log('WebSocket已连接'),

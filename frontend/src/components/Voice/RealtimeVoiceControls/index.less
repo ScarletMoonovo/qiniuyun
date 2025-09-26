@@ -1,0 +1,402 @@
+.realtime-voice-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 16px;
+  border: 1px solid #e8e8e8;
+
+  .main-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .main-voice-button {
+      min-width: 160px;
+      height: 48px;
+      font-size: 16px;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+      &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
+      &.ant-btn-primary {
+        background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+        border: none;
+
+        &.ant-btn-dangerous {
+          background: linear-gradient(135deg, #ff4d4f 0%, #cf1322 100%);
+        }
+      }
+
+      &:disabled {
+        transform: none;
+        box-shadow: none;
+      }
+    }
+
+    .mute-button {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+
+      &:hover:not(:disabled) {
+        background-color: rgba(0, 0, 0, 0.06);
+        transform: scale(1.1);
+      }
+
+      &:active:not(:disabled) {
+        transform: scale(1);
+      }
+    }
+  }
+
+  .status-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 300px;
+
+    .connection-status {
+      display: flex;
+      justify-content: center;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 8px;
+      backdrop-filter: blur(10px);
+
+      .ant-badge {
+        .ant-badge-status-text {
+          font-size: 12px;
+          color: rgba(0, 0, 0, 0.65);
+        }
+      }
+    }
+
+    .volume-indicator {
+      width: 100%;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 8px;
+      backdrop-filter: blur(10px);
+
+      .volume-label {
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.65);
+        margin-bottom: 4px;
+        text-align: center;
+      }
+
+      .ant-progress {
+        .ant-progress-bg {
+          transition: all 0.1s ease;
+        }
+      }
+    }
+
+    .recognized-text {
+      width: 100%;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 8px;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(24, 144, 255, 0.2);
+
+      .text-label {
+        font-size: 12px;
+        color: rgba(0, 0, 0, 0.45);
+        margin-bottom: 4px;
+      }
+
+      .text-content {
+        font-size: 14px;
+        color: rgba(0, 0, 0, 0.85);
+        line-height: 1.4;
+        word-wrap: break-word;
+        min-height: 20px;
+      }
+    }
+
+    .error-message {
+      width: 100%;
+      padding: 8px 12px;
+      background: rgba(255, 77, 79, 0.1);
+      border: 1px solid rgba(255, 77, 79, 0.3);
+      border-radius: 8px;
+      text-align: center;
+
+      .error-text {
+        font-size: 12px;
+        color: #ff4d4f;
+      }
+    }
+  }
+
+  .voice-waveform {
+    width: 100%;
+    max-width: 200px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+
+    .wave-bars {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      height: 40px;
+
+      .wave-bar {
+        width: 4px;
+        background: linear-gradient(to top, #1890ff, #40a9ff);
+        border-radius: 2px;
+        animation: waveAnimation 1.2s ease-in-out infinite;
+        min-height: 8px;
+        max-height: 40px;
+      }
+    }
+  }
+}
+
+// 波形动画
+@keyframes waveAnimation {
+  0%, 100% {
+    transform: scaleY(0.3);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+// 响应式适配
+@media (max-width: 768px) {
+  .realtime-voice-controls {
+    padding: 16px;
+    gap: 12px;
+
+    .main-controls {
+      gap: 8px;
+
+      .main-voice-button {
+        min-width: 140px;
+        height: 44px;
+        font-size: 14px;
+      }
+
+      .mute-button {
+        width: 36px;
+        height: 36px;
+      }
+    }
+
+    .status-display {
+      max-width: 280px;
+      gap: 10px;
+
+      .connection-status,
+      .volume-indicator,
+      .recognized-text,
+      .error-message {
+        padding: 8px 10px;
+      }
+
+      .recognized-text {
+        .text-content {
+          font-size: 13px;
+        }
+      }
+    }
+
+    .voice-waveform {
+      height: 50px;
+
+      .wave-bars {
+        height: 30px;
+        gap: 2px;
+
+        .wave-bar {
+          width: 3px;
+          max-height: 30px;
+        }
+      }
+    }
+  }
+}
+
+// 暗色主题支持
+@media (prefers-color-scheme: dark) {
+  .realtime-voice-controls {
+    background: linear-gradient(135deg, #2f2f2f 0%, #1a1a1a 100%);
+    border-color: #434343;
+
+    .status-display {
+      .connection-status,
+      .volume-indicator,
+      .recognized-text {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+
+        .volume-label,
+        .text-label {
+          color: rgba(255, 255, 255, 0.65);
+        }
+
+        .text-content {
+          color: rgba(255, 255, 255, 0.85);
+        }
+      }
+
+      .recognized-text {
+        border-color: rgba(24, 144, 255, 0.4);
+      }
+
+      .error-message {
+        background: rgba(255, 77, 79, 0.2);
+        border-color: rgba(255, 77, 79, 0.5);
+      }
+    }
+
+    .voice-waveform {
+      background: rgba(255, 255, 255, 0.1);
+    }
+  }
+}
+
+// 高对比度模式支持
+@media (prefers-contrast: high) {
+  .realtime-voice-controls {
+    border-width: 2px;
+
+    .main-controls {
+      .main-voice-button {
+        border-width: 2px;
+        font-weight: 600;
+      }
+    }
+
+    .status-display {
+      .connection-status,
+      .volume-indicator,
+      .recognized-text,
+      .error-message {
+        border-width: 2px;
+      }
+
+      .error-message {
+        .error-text {
+          font-weight: 600;
+        }
+      }
+    }
+  }
+}
+
+// 减少动画模式支持
+@media (prefers-reduced-motion: reduce) {
+  .realtime-voice-controls {
+    .main-controls {
+      .main-voice-button,
+      .mute-button {
+        transition: none;
+
+        &:hover:not(:disabled) {
+          transform: none;
+        }
+
+        &:active:not(:disabled) {
+          transform: none;
+        }
+      }
+    }
+
+    .voice-waveform {
+      .wave-bars {
+        .wave-bar {
+          animation: none;
+          transform: scaleY(0.6);
+        }
+      }
+    }
+  }
+
+  @keyframes waveAnimation {
+    0%, 100% {
+      transform: scaleY(0.6);
+    }
+  }
+}
+
+// 状态指示样式
+.realtime-voice-controls {
+  &.status-idle {
+    .main-controls .main-voice-button {
+      background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%);
+    }
+  }
+
+  &.status-listening {
+    .main-controls .main-voice-button {
+      background: linear-gradient(135deg, #ff4d4f 0%, #cf1322 100%);
+      animation: pulseListening 2s ease-in-out infinite;
+    }
+  }
+
+  &.status-processing {
+    .main-controls .main-voice-button {
+      background: linear-gradient(135deg, #faad14 0%, #d48806 100%);
+    }
+  }
+
+  &.status-speaking {
+    .main-controls .main-voice-button {
+      background: linear-gradient(135deg, #722ed1 0%, #531dab 100%);
+      animation: pulseSpeaking 1.5s ease-in-out infinite;
+    }
+  }
+
+  &.status-error {
+    .main-controls .main-voice-button {
+      background: linear-gradient(135deg, #ff7875 0%, #ff4d4f 100%);
+    }
+  }
+}
+
+@keyframes pulseListening {
+  0%, 100% {
+    box-shadow: 0 4px 12px rgba(255, 77, 79, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 20px rgba(255, 77, 79, 0.6);
+  }
+}
+
+@keyframes pulseSpeaking {
+  0%, 100% {
+    box-shadow: 0 4px 12px rgba(114, 46, 209, 0.3);
+  }
+  50% {
+    box-shadow: 0 4px 20px rgba(114, 46, 209, 0.6);
+  }
+}

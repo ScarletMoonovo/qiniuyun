@@ -2,7 +2,7 @@
 /* eslint-disable */
 import { request } from '@umijs/max';
 
-/** 开始聊天，用于ws连接 GET /api/chat */
+/** 开始聊天，用于与后端的ws连接 GET /api/chat */
 export async function chat(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.chatParams,

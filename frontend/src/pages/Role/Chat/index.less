@@ -1,0 +1,329 @@
+.role-chat-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f5f5f5;
+
+  .chat-header {
+    background-color: #fff;
+    border-bottom: 1px solid #f0f0f0;
+    padding: 12px 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    z-index: 10;
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1200px;
+      margin: 0 auto;
+
+      .header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        .back-button {
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+
+          &:hover {
+            background-color: rgba(0, 0, 0, 0.06);
+          }
+        }
+
+        .role-avatar {
+          border: 2px solid #f0f0f0;
+        }
+
+        .role-info {
+          .role-name {
+            margin: 0;
+            font-size: 16px;
+            line-height: 1.2;
+          }
+
+          .role-status {
+            font-size: 12px;
+            color: #52c41a;
+          }
+        }
+      }
+
+      .header-right {
+        .more-button {
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+
+          &:hover {
+            background-color: rgba(0, 0, 0, 0.06);
+          }
+        }
+      }
+    }
+  }
+
+  .chat-mode-section {
+    background-color: #fff;
+    padding: 16px;
+    border-bottom: 1px solid #f0f0f0;
+
+    .chat-mode-switch {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+  }
+
+  .chat-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    min-height: 0; // 重要：允许flex子元素收缩
+
+    .message-section {
+      flex: 1;
+      background-color: #fff;
+      margin: 16px 16px 0 16px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      overflow: hidden;
+      min-height: 0; // 重要：允许MessageList正确滚动
+    }
+
+    .input-section {
+      padding: 16px;
+      background-color: #fff;
+      margin: 16px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+  }
+}
+
+// 加载状态
+.chat-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+// 响应式适配
+@media (max-width: 768px) {
+  .role-chat-page {
+    .chat-header {
+      padding: 8px 12px;
+
+      .header-content {
+        .header-left {
+          gap: 8px;
+
+          .role-avatar {
+            width: 36px !important;
+            height: 36px !important;
+          }
+
+          .role-info {
+            .role-name {
+              font-size: 14px;
+            }
+
+            .role-status {
+              font-size: 11px;
+            }
+          }
+        }
+      }
+    }
+
+    .chat-mode-section {
+      padding: 12px;
+    }
+
+    .chat-content {
+      .message-section {
+        margin: 12px 12px 0 12px;
+        border-radius: 8px;
+      }
+
+      .input-section {
+        margin: 12px;
+        padding: 12px;
+        border-radius: 8px;
+      }
+    }
+  }
+}
+
+// 暗色主题支持
+@media (prefers-color-scheme: dark) {
+  .role-chat-page {
+    background-color: #1f1f1f;
+
+    .chat-header {
+      background-color: #262626;
+      border-bottom-color: #434343;
+
+      .header-content {
+        .header-left {
+          .back-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+          }
+
+          .role-avatar {
+            border-color: #434343;
+          }
+
+          .role-info {
+            .role-name {
+              color: rgba(255, 255, 255, 0.85);
+            }
+          }
+        }
+
+        .header-right {
+          .more-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+          }
+        }
+      }
+    }
+
+    .chat-mode-section {
+      background-color: #262626;
+      border-bottom-color: #434343;
+    }
+
+    .chat-content {
+      .message-section {
+        background-color: #262626;
+      }
+
+      .input-section {
+        background-color: #262626;
+      }
+    }
+  }
+}
+
+// 高对比度模式支持
+@media (prefers-contrast: high) {
+  .role-chat-page {
+    .chat-header {
+      border-bottom-width: 2px;
+    }
+
+    .chat-mode-section {
+      border-bottom-width: 2px;
+    }
+
+    .chat-content {
+      .message-section,
+      .input-section {
+        border: 2px solid #d9d9d9;
+      }
+    }
+  }
+}
+
+// 动画效果
+.role-chat-page {
+  .chat-header {
+    transition: box-shadow 0.3s ease;
+  }
+
+  .chat-content {
+    .message-section,
+    .input-section {
+      transition: box-shadow 0.3s ease;
+
+      &:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+    }
+  }
+}
+
+// 减少动画模式支持
+@media (prefers-reduced-motion: reduce) {
+  .role-chat-page {
+    .chat-header,
+    .chat-content .message-section,
+    .chat-content .input-section {
+      transition: none;
+    }
+
+    .chat-content {
+      .message-section:hover,
+      .input-section:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      }
+    }
+  }
+}
+
+// 聊天状态指示
+.role-chat-page {
+  &.mode-text {
+    .input-section {
+      border-left: 4px solid #1890ff;
+    }
+  }
+
+  &.mode-voice {
+    .input-section {
+      border-left: 4px solid #52c41a;
+    }
+  }
+
+  &.typing {
+    .message-section {
+      border-bottom: 2px solid #1890ff;
+    }
+  }
+
+  &.voice-active {
+    .input-section {
+      background: linear-gradient(135deg, rgba(82, 196, 26, 0.05) 0%, rgba(82, 196, 26, 0.02) 100%);
+    }
+  }
+}
+
+// 全屏模式支持
+.role-chat-page {
+  &.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    background-color: #fff;
+
+    .chat-content {
+      max-width: none;
+      margin: 0;
+
+      .message-section {
+        margin: 0;
+        border-radius: 0;
+      }
+
+      .input-section {
+        margin: 0;
+        border-radius: 0;
+      }
+    }
+  }
+}

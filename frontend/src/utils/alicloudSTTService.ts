@@ -1,6 +1,12 @@
 /**
  * 阿里云实时语音识别（STT）服务
- * 前端直连阿里云STT，获取识别文本后发送给后端处理
+ * 前端直连阿里云STT，获取识别文本后通过WebSocket发送给后端进行LLM处理
+ * 
+ * 架构流程：
+ * 1. 前端音频采集 → 阿里云STT WebSocket
+ * 2. 阿里云STT识别结果 → 前端接收
+ * 3. 前端通过后端WebSocket发送识别文本
+ * 4. 后端LLM处理 → TTS音频生成 → 前端播放
  * 
  * @example
  * ```typescript
@@ -14,7 +20,7 @@
  * ```
  */
 
-import { sendSTTText } from '@/services/backend/chat';
+import { getSocketService } from '@/utils/socketService';
 
 /**
  * 阿里云实时语音识别服务类
@@ -532,7 +538,7 @@ class AlicloudSTTService {
   }
 
   /**
-   * 发送识别文本到后端进行LLM处理
+   * 发送识别文本到后端进行LLM处理（通过WebSocket）
    * @private
    * @param text - 识别出的文本内容
    * @param isFinal - 是否为最终识别结果
@@ -542,16 +548,23 @@ class AlicloudSTTService {
     if (!this.currentRoleId || !this.currentSessionId) return;
 
     try {
-      await sendSTTText({
-        roleId: this.currentRoleId,
-        sessionId: this.currentSessionId,
+      // 通过WebSocket发送STT识别文本到后端进行LLM处理
+      // 假设WebSocket服务已经在聊天页面中初始化
+      const socketService = getSocketService(process.env.REACT_APP_WS_URL || 'ws://localhost:3001');
+      const success = socketService.sendSTTText(
+        this.currentRoleId,
+        this.currentSessionId,
         text,
-        isFinal,
-      });
+        isFinal
+      );
       
-      console.log('STT文本已发送到后端:', text);
+      if (success) {
+        console.log('STT文本已通过WebSocket发送到后端:', text, 'isFinal:', isFinal);
+      } else {
+        throw new Error('WebSocket连接未建立或发送失败');
+      }
     } catch (error) {
-      console.error('发送STT文本到后端失败:', error);
+      console.error('通过WebSocket发送STT文本到后端失败:', error);
       this.handlers.onError?.({
         code: 'BACKEND_SEND_FAILED',
         message: '发送识别文本到后端失败',
