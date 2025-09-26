@@ -166,11 +166,9 @@ declare namespace API {
     roleId: number;
     userId: number;
     content: string;
-    type: 'text' | 'voice';
+    type: 'text';
     sender: 'user' | 'role';
     timestamp: string;
-    voiceUrl?: string;
-    duration?: number;
   };
 
   type ChatSession = {
@@ -191,12 +189,6 @@ declare namespace API {
     content: string;
   };
 
-  type SendVoiceMessageRequest = {
-    roleId: number;
-    sessionId?: string;
-    voiceData: Blob;
-    duration: number;
-  };
 
   type SendMessageResponse = {
     message: ChatMessage;
@@ -252,31 +244,13 @@ declare namespace API {
     models: VoiceModel[];
   };
 
-  type VoiceToTextRequest = {
-    voiceData: Blob;
-    language?: string;
-  };
 
-  type VoiceToTextResponse = {
-    text: string;
-    confidence: number;
-  };
 
-  type TextToVoiceRequest = {
-    text: string;
-    voiceModelId: string;
-    speed?: number;
-    pitch?: number;
-  };
 
-  type TextToVoiceResponse = {
-    voiceUrl: string;
-    duration: number;
-  };
-
-  // WebSocket消息类型定义
+  // 后端WebSocket消息类型定义
   type WebSocketMessage = {
-    type: 'chat_message' | 'typing_start' | 'typing_stop' | 'error' | 'connection';
+    type: 'chat_message' | 'typing_start' | 'typing_stop' | 'error' | 
+          'tts_audio' | 'stt_text' | 'heartbeat';
     payload: any;
     timestamp: string;
   };
@@ -296,6 +270,30 @@ declare namespace API {
       sessionId: string;
     };
   };
+
+
+  // STT识别文本消息（从前端发送到后端）
+  type STTTextMessage = {
+    type: 'stt_text';
+    payload: {
+      roleId: number;
+      sessionId: string;
+      text: string;
+      isFinal: boolean;
+    };
+  };
+
+  // TTS音频流消息（从后端发送到前端）
+  type TTSAudioMessage = {
+    type: 'tts_audio';
+    payload: {
+      roleId: number;
+      sessionId: string;
+      audioData: ArrayBuffer;
+      isLast: boolean;
+    };
+  };
+
 
   // 通用响应类型
   type BaseResponse<T = any> = {

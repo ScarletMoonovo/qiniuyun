@@ -1,92 +1,96 @@
-# 技术设计文档 - {spec-name}
+# Design Document
 
-## 1. 设计概述
+## Overview
 
-### 1.1 设计目标
-[技术设计的主要目标]
+[High-level description of the feature and its place in the overall system]
 
-### 1.2 设计原则
-[设计遵循的技术原则]
+## Steering Document Alignment
 
-### 1.3 架构概览
-[整体架构图和说明]
+### Technical Standards (tech.md)
+[How the design follows documented technical patterns and standards]
 
-## 2. 系统架构
+### Project Structure (structure.md)
+[How the implementation will follow project organization conventions]
 
-### 2.1 前端架构
-[前端架构设计]
+## Code Reuse Analysis
+[What existing code will be leveraged, extended, or integrated with this feature]
 
-### 2.2 后端接口设计
-[后端API接口规范]
+### Existing Components to Leverage
+- **[Component/Utility Name]**: [How it will be used]
+- **[Service/Helper Name]**: [How it will be extended]
 
-### 2.3 数据流设计
-[数据在系统中的流转]
+### Integration Points
+- **[Existing System/API]**: [How the new feature will integrate]
+- **[Database/Storage]**: [How data will connect to existing schemas]
 
-## 3. 技术栈选择
+## Architecture
 
-### 3.1 核心技术
-[主要技术栈选择和理由]
+[Describe the overall architecture and design patterns used]
 
-### 3.2 第三方库
-[第三方依赖库选择]
+### Modular Design Principles
+- **Single File Responsibility**: Each file should handle one specific concern or domain
+- **Component Isolation**: Create small, focused components rather than large monolithic files
+- **Service Layer Separation**: Separate data access, business logic, and presentation layers
+- **Utility Modularity**: Break utilities into focused, single-purpose modules
 
-### 3.3 开发工具
-[开发和构建工具]
+```mermaid
+graph TD
+    A[Component A] --> B[Component B]
+    B --> C[Component C]
+```
 
-## 4. 模块设计
+## Components and Interfaces
 
-### 4.1 页面结构
-[页面层级和路由设计]
+### Component 1
+- **Purpose:** [What this component does]
+- **Interfaces:** [Public methods/APIs]
+- **Dependencies:** [What it depends on]
+- **Reuses:** [Existing components/utilities it builds upon]
 
-### 4.2 组件设计
-[主要组件的设计]
+### Component 2
+- **Purpose:** [What this component does]
+- **Interfaces:** [Public methods/APIs]
+- **Dependencies:** [What it depends on]
+- **Reuses:** [Existing components/utilities it builds upon]
 
-### 4.3 状态管理
-[状态管理方案]
+## Data Models
 
-### 4.4 数据模型
-[数据结构定义]
+### Model 1
+```
+[Define the structure of Model1 in your language]
+- id: [unique identifier type]
+- name: [string/text type]
+- [Additional properties as needed]
+```
 
-## 5. 接口设计
+### Model 2
+```
+[Define the structure of Model2 in your language]
+- id: [unique identifier type]
+- [Additional properties as needed]
+```
 
-### 5.1 API接口规范
-[RESTful API设计]
+## Error Handling
 
-### 5.2 数据格式
-[请求和响应数据格式]
+### Error Scenarios
+1. **Scenario 1:** [Description]
+   - **Handling:** [How to handle]
+   - **User Impact:** [What user sees]
 
-### 5.3 错误处理
-[错误处理机制]
+2. **Scenario 2:** [Description]
+   - **Handling:** [How to handle]
+   - **User Impact:** [What user sees]
 
-## 6. 性能优化
+## Testing Strategy
 
-### 6.1 加载优化
-[页面加载性能优化]
+### Unit Testing
+- [Unit testing approach]
+- [Key components to test]
 
-### 6.2 运行时优化
-[运行时性能优化]
+### Integration Testing
+- [Integration testing approach]
+- [Key flows to test]
 
-### 6.3 缓存策略
-[缓存机制设计]
-
-## 7. 安全设计
-
-### 7.1 身份认证
-[用户认证机制]
-
-### 7.2 数据安全
-[数据传输和存储安全]
-
-### 7.3 权限控制
-[访问权限控制]
-
-## 8. 部署架构
-
-### 8.1 构建流程
-[构建和打包流程]
-
-### 8.2 部署策略
-[部署方案]
-
-### 8.3 监控方案
-[性能监控和错误追踪]
+### End-to-End Testing
+- [E2E testing approach]
+- [User scenarios to test]

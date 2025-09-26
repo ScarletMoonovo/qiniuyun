@@ -1,82 +1,74 @@
 import { PageContainer } from '@ant-design/pro-components';
-import { Card, Row, Col, Button, Typography, Space, Empty, Avatar } from 'antd';
+import { Card, Row, Col, Button, Typography, Space, Empty, Avatar, Spin } from 'antd';
 import { PlusOutlined, UserOutlined, RobotOutlined } from '@ant-design/icons';
 import { history } from 'umi';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 const { Title, Paragraph } = Typography;
 
-// 临时模拟数据
-const mockMyRoles = [
+// 临时模拟数据，待状态管理完善后移除
+const mockMyRoles: API.Role[] = [
   {
-    id: 1,
+    id: 10,
     name: '智能助手小爱',
     avatar: '',
     description: '一个温柔体贴的AI助手，可以帮助你处理日常事务',
     category: 'assistant',
     tags: ['助手', '温柔', '贴心'],
-    createdAt: '2024-01-15',
-  },
-  {
-    id: 2,
-    name: '历史学者',
-    avatar: '',
-    description: '博学的历史专家，对各个历史时期都有深入了解',
-    category: 'education',
-    tags: ['历史', '学者', '博学'],
-    createdAt: '2024-01-10',
+    personality: '温柔、体贴、高效',
+    background: '专为用户日常生活服务的智能助手',
+    quotes: ['你好！我是小爱，有什么可以帮助你的吗？'],
+    voiceStyle: 'gentle_female',
+    popularity: 0,
+    createdAt: '2024-01-15T10:30:00Z',
+    updatedAt: '2024-01-15T10:30:00Z',
+    creatorId: 100,
   },
 ];
 
-const mockDiscoverRoles = [
+const mockDiscoverRoles: API.Role[] = [
   {
-    id: 3,
+    id: 1,
     name: '心理咨询师',
     avatar: '',
     description: '专业的心理咨询师，能够倾听和理解你的困扰',
     category: 'counselor',
     tags: ['心理', '倾听', '专业'],
-    creator: { name: '用户A' },
+    personality: '温柔、耐心、专业',
+    background: '拥有10年心理咨询经验的专业咨询师',
+    quotes: ['你好，我是你的心理咨询师，有什么困扰可以和我分享'],
+    voiceStyle: 'gentle_female',
     popularity: 128,
+    createdAt: '2024-01-15T10:30:00Z',
+    updatedAt: '2024-01-15T10:30:00Z',
+    creatorId: 1,
+    creator: { id: 1, name: '用户A', avatar: '', birthday: undefined, sex: undefined, signature: undefined },
   },
   {
-    id: 4,
+    id: 2,
     name: '编程导师',
     avatar: '',
     description: '经验丰富的编程老师，可以指导各种编程问题',
     category: 'education',
     tags: ['编程', '教学', '技术'],
-    creator: { name: '用户B' },
+    personality: '严谨、逻辑清晰、有耐心',
+    background: '资深软件工程师，有丰富的教学经验',
+    quotes: ['Hello! 我是你的编程导师，让我们一起探索代码的世界'],
+    voiceStyle: 'mature_male',
     popularity: 95,
-  },
-  {
-    id: 5,
-    name: '创意写手',
-    avatar: '',
-    description: '富有想象力的创意写手，擅长各种文体创作',
-    category: 'creative',
-    tags: ['创作', '想象力', '文学'],
-    creator: { name: '用户C' },
-    popularity: 76,
-  },
-  {
-    id: 6,
-    name: '旅行向导',
-    avatar: '',
-    description: '熟悉世界各地的旅行专家，为你规划完美行程',
-    category: 'travel',
-    tags: ['旅行', '向导', '规划'],
-    creator: { name: '用户D' },
-    popularity: 54,
+    createdAt: '2024-01-14T15:20:00Z',
+    updatedAt: '2024-01-14T15:20:00Z',
+    creatorId: 2,
+    creator: { id: 2, name: '用户B', avatar: '', birthday: undefined, sex: undefined, signature: undefined },
   },
 ];
 
 const RoleCard: React.FC<{
-  role: any;
+  role: API.Role;
   showCreator?: boolean;
-  onEdit?: (role: any) => void;
-  onChat?: (role: any) => void;
-  onView?: (role: any) => void;
+  onEdit?: (role: API.Role) => void;
+  onChat?: (role: API.Role) => void;
+  onView?: (role: API.Role) => void;
 }> = ({ role, showCreator = false, onEdit, onChat, onView }) => {
   return (
     <Card
@@ -149,24 +141,40 @@ const RoleCard: React.FC<{
 };
 
 const RoleHome: React.FC = () => {
-  const [myRoles, setMyRoles] = useState(mockMyRoles);
-  const [discoverRoles, setDiscoverRoles] = useState(mockDiscoverRoles);
+  const [myRoles, setMyRoles] = useState<API.Role[]>([]);
+  const [discoverRoles, setDiscoverRoles] = useState<API.Role[]>([]);
+  const [loading, setLoading] = useState({ myRoles: true, roleList: true });
 
   const handleCreateRole = () => {
     history.push('/role/create');
   };
 
-  const handleEditRole = (role: any) => {
+  const handleEditRole = (role: API.Role) => {
     history.push(`/role/edit/${role.id}`);
   };
 
-  const handleChatWithRole = (role: any) => {
+  const handleChatWithRole = (role: API.Role) => {
     history.push(`/role/chat/${role.id}`);
   };
 
-  const handleViewRoleDetail = (role: any) => {
+  const handleViewRoleDetail = (role: API.Role) => {
     history.push(`/role/detail/${role.id}`);
   };
+
+  useEffect(() => {
+    // 模拟加载数据
+    setLoading({ myRoles: true, roleList: true });
+    
+    setTimeout(() => {
+      setMyRoles(mockMyRoles);
+      setLoading(prev => ({ ...prev, myRoles: false }));
+    }, 1000);
+
+    setTimeout(() => {
+      setDiscoverRoles(mockDiscoverRoles);
+      setLoading(prev => ({ ...prev, roleList: false }));
+    }, 1200);
+  }, []);
 
   return (
     <PageContainer
@@ -196,7 +204,11 @@ const RoleHome: React.FC = () => {
             </Button>
           </div>
           
-          {myRoles.length > 0 ? (
+          {loading.myRoles ? (
+            <div style={{ textAlign: 'center', padding: '50px' }}>
+              <Spin size="large" />
+            </div>
+          ) : myRoles.length > 0 ? (
             <Row gutter={[16, 16]}>
               {myRoles.map((role) => (
                 <Col xs={24} sm={12} md={8} lg={6} key={role.id}>
@@ -234,18 +246,24 @@ const RoleHome: React.FC = () => {
             发现角色
           </Title>
           
-          <Row gutter={[16, 16]}>
-            {discoverRoles.map((role) => (
-              <Col xs={24} sm={12} md={8} lg={6} key={role.id}>
-                <RoleCard 
-                  role={role} 
-                  showCreator={true}
-                  onChat={handleChatWithRole}
-                  onView={handleViewRoleDetail}
-                />
-              </Col>
-            ))}
-          </Row>
+          {loading.roleList ? (
+            <div style={{ textAlign: 'center', padding: '50px' }}>
+              <Spin size="large" />
+            </div>
+          ) : (
+            <Row gutter={[16, 16]}>
+              {discoverRoles.map((role) => (
+                <Col xs={24} sm={12} md={8} lg={6} key={role.id}>
+                  <RoleCard 
+                    role={role} 
+                    showCreator={true}
+                    onChat={handleChatWithRole}
+                    onView={handleViewRoleDetail}
+                  />
+                </Col>
+              ))}
+            </Row>
+          )}
           
           <div style={{ textAlign: 'center', marginTop: 32 }}>
             <Button size="large">

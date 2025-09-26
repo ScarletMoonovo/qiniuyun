@@ -23,8 +23,8 @@
 - ✅ **角色管理**: 浏览、搜索和管理用户创建的角色
 - ✅ **角色详情**: 查看角色完整信息和设置
 - ✅ **文本聊天**: 与AI角色进行文字对话交流
-- ✅ **语音聊天**: 与AI角色进行实时语音对话（可选模式）
-- ❌ **聊天历史**: 暂不包含，计划在V2.0版本中添加
+- ✅ **实时语音通话**: 与AI角色进行基于WebSocket的实时语音对话
+- ✅ **聊天历史**: 保存和查看与各个角色的对话记录
 - ❌ **自定义声音训练**: 暂不包含，计划在V2.0版本中添加
 - ❌ **社交分享**: 暂不包含，后续版本考虑
 
@@ -94,51 +94,48 @@ export default [
 ```
 
 #### 2.1.2 状态管理设计
-基于UmiJS的model机制，创建以下状态管理模块：
+采用页面级状态管理方案，使用React Hooks进行本地状态管理：
 
 ```typescript
-// src/models/roleModel.ts
-export default {
-  namespace: 'role',
-  state: {
-    currentRole: null,
-    roleList: [],
-    categories: [],
-    searchHistory: [],
-  },
-  effects: {
-    *fetchRoles({ payload }, { call, put }) { /* ... */ },
-    *searchRoles({ payload }, { call, put }) { /* ... */ },
-  },
-  reducers: {
-    setCurrentRole(state, { payload }) { /* ... */ },
-    setRoleList(state, { payload }) { /* ... */ },
-  },
+// 页面级状态管理示例
+
+// 角色相关页面
+const RoleHomePage = () => {
+  const [roleList, setRoleList] = useState<API.Role[]>([]);
+  const [categories, setCategories] = useState<API.RoleCategory[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [roles, cats] = await Promise.all([
+          roleAPI.getRoleList(),
+          roleAPI.getCategories()
+        ]);
+        setRoleList(roles);
+        setCategories(cats);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 };
 
-// src/models/chatModel.ts  
-export default {
-  namespace: 'chat',
-  state: {
-    currentChat: null,
-    chatHistory: [],
-    chatMode: 'text', // 'text' | 'voice'
-    isRecording: false,
-    isPlaying: false,
-    messages: [],
-    isTyping: false,
-  },
-  effects: {
-    *sendTextMessage({ payload }, { call, put }) { /* ... */ },
-    *sendVoiceMessage({ payload }, { call, put }) { /* ... */ },
-    *switchChatMode({ payload }, { call, put }) { /* ... */ },
-  },
-  reducers: {
-    addMessage(state, { payload }) { /* ... */ },
-    setChatMode(state, { payload }) { /* ... */ },
-    setRecordingStatus(state, { payload }) { /* ... */ },
-    setTypingStatus(state, { payload }) { /* ... */ },
-  },
+// 聊天页面
+const ChatPage = () => {
+  const [messages, setMessages] = useState<API.ChatMessage[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [chatMode, setChatMode] = useState<'text' | 'voice'>('text');
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const sendMessage = async (content: string) => {
+    const response = await chatAPI.sendMessage({ content, roleId });
+    setMessages(prev => [...prev, response.userMessage, response.aiMessage]);
+  };
 };
 ```
 
@@ -197,11 +194,9 @@ declare namespace API {
     roleId: number;
     userId: number;
     content: string;
-    type: 'text' | 'voice';
+    type: 'text';
     sender: 'user' | 'role';
     timestamp: string;
-    voiceUrl?: string;
-    duration?: number;
   };
 
   type ChatSession = {
@@ -217,8 +212,7 @@ declare namespace API {
   type SendMessageRequest = {
     roleId: number;
     content: string;
-    type: 'text' | 'voice';
-    voiceData?: string; // base64编码的音频数据
+    type: 'text';
   };
 
   type SendMessageResponse = {
@@ -237,18 +231,38 @@ declare namespace API {
    输入组件      前端验证      聊天服务API      AI处理服务      消息组件
 ```
 
-#### 2.3.2 语音聊天数据流
+#### 2.3.2 实时语音聊天数据流（基于WebSocket）
 ```
-用户语音输入 → 语音识别(STT) → 文本处理 → AI对话生成 → 语音合成(TTS) → 音频播放
-     ↓              ↓              ↓              ↓              ↓
-   录音组件      语音服务API      聊天服务API      语音合成API      音频播放组件
+用户音频流 → 阿里云STT → 识别文本 → 后端LLM处理 → 阿里云TTS → 音频流 → 前端播放
+     ↓              ↓              ↓              ↓              ↓              ↓
+   音频捕获      实时语音识别    文本传输      AI对话服务     语音合成服务    音频播放器
+   
+详细流程：
+前端音频采集 → WebSocket直连阿里云STT → 文本返回前端 → 前端发送文本到后端 → 后端调用LLM → 后端调用TTS → 音频流返回前端
 ```
 
-#### 2.3.3 实时通信架构
-- **WebSocket连接**: 用于实时消息传输和状态同步（文本和语音）
-- **HTTP请求**: 用于角色数据、历史记录等静态数据获取
-- **语音数据流**: 采用分块传输优化大文件处理
-- **消息类型支持**: 统一处理文本消息和语音消息
+
+#### 2.3.3 WebSocket连接架构
+```
+前端 ←WebSocket1→ 阿里云STT     前端 ←WebSocket2→ 后端服务
+  ↓                                ↓
+音频流传输                      文本/音频流传输
+```
+
+**架构组件**：
+- **前端音频处理**: MediaRecorder API进行音频捕获和分片
+- **WebSocket连接1**: 前端直连阿里云STT服务进行音频识别
+- **WebSocket连接2**: 前端与后端进行文本和音频流传输
+- **后端AI服务**: 集成LLM对话和TTS的服务
+- **阿里云服务**: STT语音识别、LLM大模型、TTS语音合成
+
+**核心功能**：
+- 音频实时分片传输到阿里云STT（100ms分片）
+- 前端直接获取STT识别结果
+- 文本通过后端进行LLM处理
+- TTS音频流实时返回前端播放
+- 音频质量优化（AEC、NS、AGC）
+- 实时音量监测和可视化
 
 ## 3. 技术栈选择
 
@@ -256,27 +270,38 @@ declare namespace API {
 - **前端框架**: React 18 + TypeScript（继承现有架构）
 - **UI组件库**: Ant Design 5.x + Pro Components（继承现有）
 - **构建工具**: UmiJS 4.x（继承现有）
-- **状态管理**: UmiJS内置Model + React Hooks
+- **状态管理**: React Hooks + 页面级状态管理
 - **路由管理**: UmiJS内置路由系统
 
-### 3.2 语音技术栈
-- **语音录制**: Web Audio API + MediaRecorder API
-- **语音播放**: HTML5 Audio API
-- **实时通信**: WebSocket
-- **音频处理**: Web Audio API + AudioContext
-- **语音格式**: WebM for recording, MP3/WAV for playback
+### 3.2 实时语音技术栈
+- **实时通信**: 双WebSocket连接（前端↔阿里云STT，前端↔后端）
+- **音频捕获**: MediaRecorder API + MediaStream
+- **音频播放**: Web Audio API + AudioBufferSourceNode
+- **数据传输**: WebSocket Binary (音频分片传输到阿里云STT)
+- **音频格式**: PCM 16kHz 16bit单声道 (阿里云STT要求)
+- **文本传输**: WebSocket JSON (前端↔后端文本交互)
+- **音频处理**: 
+  - 回声消除 (AEC)
+  - 噪声抑制 (NS) 
+  - 自动增益控制 (AGC)
+  - 实时音频分片
 
 ### 3.3 新增依赖库
 ```json
 {
   "dependencies": {
-    "socket.io-client": "^4.7.0",
-    "recordrtc": "^5.6.2", 
-    "react-audio-player": "^0.17.0",
-    "wavesurfer.js": "^7.0.0"
+    // 无需新增依赖，使用浏览器原生API
   }
 }
 ```
+
+### 3.4 后端服务技术栈
+- **服务器框架**: Node.js + Express (或其他后端框架)
+- **实时通信**: WebSocket (与前端进行文本和音频流交互)
+- **AI服务**: 阿里云LLM大模型API
+- **语音服务**: 阿里云TTS实时语音合成API
+- **音频处理**: FFmpeg (音频格式转换和处理)
+- **认证**: 阿里云AccessKey + JWT用户认证
 
 ## 4. 模块设计
 
@@ -401,7 +426,7 @@ const RoleChat: React.FC = () => {
       {chatMode === 'text' ? (
         <TextChatInput />
       ) : (
-        <VoiceControls />
+        <RealtimeVoiceControls />
       )}
     </PageContainer>
   );
@@ -599,118 +624,76 @@ export async function getRoleCategories() {
 
 ```
 
-#### 4.3.2 语音服务工具类
+
+#### 4.3.3 阿里云STT直连服务使用示例
 ```typescript
-// src/utils/voiceService.ts
-export class VoiceService {
-  private mediaRecorder: MediaRecorder | null = null;
-  private audioChunks: Blob[] = [];
-  private stream: MediaStream | null = null;
+// src/utils/alicloudSTTService.ts 使用示例
+import { getAlicloudSTTService } from '@/utils/alicloudSTTService';
 
-  // 检查浏览器支持
-  static isSupported(): boolean {
-    return !!(navigator.mediaDevices && 
-             navigator.mediaDevices.getUserMedia &&
-             window.MediaRecorder);
+const sttService = getAlicloudSTTService({
+  sampleRate: 16000, // 阿里云要求配置
+  channels: 1,
+  encoding: 'pcm',
+  chunkDuration: 100, // 100ms分片
+});
+
+// 设置事件处理器
+sttService.setHandlers({
+  onStatusChange: (status) => {
+    console.log('STT状态变化:', status);
+    setSTTStatus(status);
+  },
+  onVolumeChange: (volume) => {
+    // 更新音量指示器
+    setVolumeLevel(volume);
+  },
+  onTextReceived: (text) => {
+    // 处理接收到的识别文本
+    console.log('收到STT识别文本:', text);
+    // 发送文本到后端进行LLM处理
+    sendTextToBackend(text);
+  },
+  onError: (error) => {
+    console.error('STT服务错误:', error);
+    message.error(error.message);
+  },
+});
+
+// 发送文本到后端处理
+const sendTextToBackend = async (text: string) => {
+  try {
+    // 通过WebSocket发送到后端
+    backendSocket.send(JSON.stringify({
+      type: 'chat_message',
+      content: text,
+      roleId,
+      sessionId
+    }));
+  } catch (error) {
+    console.error('发送文本到后端失败:', error);
   }
+};
 
-  // 请求麦克风权限
-  async requestPermission(): Promise<boolean> {
-    try {
-      this.stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          sampleRate: 44100,
-        }
-      });
-      return true;
-    } catch (error) {
-      console.error('麦克风权限被拒绝:', error);
-      return false;
-    }
+// 开始语音识别
+const handleStartVoiceRecognition = async () => {
+  try {
+    await sttService.startRecognition(roleId, sessionId);
+  } catch (error) {
+    console.error('开始语音识别失败:', error);
   }
+};
 
-  // 开始录音
-  async startRecording(): Promise<void> {
-    if (!this.stream) {
-      const hasPermission = await this.requestPermission();
-      if (!hasPermission) {
-        throw new Error('无法获取麦克风权限');
-      }
-    }
-
-    this.mediaRecorder = new MediaRecorder(this.stream!, {
-      mimeType: 'audio/webm;codecs=opus'
-    });
-    
-    this.mediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0) {
-        this.audioChunks.push(event.data);
-      }
-    };
-
-    this.audioChunks = [];
-    this.mediaRecorder.start(100); // 每100ms收集一次数据
+// 结束语音识别
+const handleStopVoiceRecognition = async () => {
+  try {
+    await sttService.stopRecognition();
+  } catch (error) {
+    console.error('结束语音识别失败:', error);
   }
-
-  // 停止录音
-  async stopRecording(): Promise<Blob> {
-    return new Promise((resolve, reject) => {
-      if (!this.mediaRecorder) {
-        reject(new Error('录音器未初始化'));
-        return;
-      }
-
-      this.mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(this.audioChunks, { 
-          type: 'audio/webm;codecs=opus' 
-        });
-        this.audioChunks = [];
-        resolve(audioBlob);
-      };
-
-      this.mediaRecorder.onerror = (event) => {
-        reject(new Error('录音失败'));
-      };
-
-      this.mediaRecorder.stop();
-      
-      // 停止音频流
-      if (this.stream) {
-        this.stream.getTracks().forEach(track => track.stop());
-        this.stream = null;
-      }
-    });
-  }
-
-  // 播放音频
-  async playAudio(audioUrl: string): Promise<HTMLAudioElement> {
-    const audio = new Audio(audioUrl);
-    audio.preload = 'auto';
-    
-    return new Promise((resolve, reject) => {
-      audio.oncanplaythrough = () => resolve(audio);
-      audio.onerror = () => reject(new Error('音频加载失败'));
-      audio.load();
-    });
-  }
-
-  // 清理资源
-  cleanup(): void {
-    if (this.stream) {
-      this.stream.getTracks().forEach(track => track.stop());
-      this.stream = null;
-    }
-    if (this.mediaRecorder) {
-      this.mediaRecorder = null;
-    }
-    this.audioChunks = [];
-  }
-}
+};
 ```
 
-#### 4.3.3 聊天服务
+#### 4.3.4 聊天服务
 ```typescript
 // src/services/backend/chat.ts
 export async function sendMessage(body: API.SendMessageRequest) {
@@ -723,16 +706,6 @@ export async function sendMessage(body: API.SendMessageRequest) {
   });
 }
 
-export async function uploadVoiceMessage(roleId: number, audioBlob: Blob) {
-  const formData = new FormData();
-  formData.append('roleId', roleId.toString());
-  formData.append('audio', audioBlob, 'voice.webm');
-  
-  return request<API.SendMessageResponse>('/api/chat/voice', {
-    method: 'POST',
-    data: formData,
-  });
-}
 
 export async function getChatHistory(roleId: number) {
   return request<API.ChatSession[]>(`/api/chat/sessions/${roleId}`, {
@@ -762,143 +735,103 @@ GET /api/roles/search            # 搜索角色
 #### 5.1.2 聊天相关接口
 ```
 POST /api/chat/messages          # 发送文本消息
-POST /api/chat/voice             # 发送语音消息
 GET /api/chat/sessions/:roleId   # 获取聊天历史
 DELETE /api/chat/sessions/:sessionId  # 删除聊天记录
 ```
 
-### 5.2 WebSocket事件定义
+### 5.2 WebSocket流式音频事件定义
 
-#### 5.2.1 客户端发送事件
+#### 5.2.1 WebSocket流式音频服务
 ```typescript
-// WebSocket连接管理
+// WebSocket流式音频连接管理
 // src/utils/socketService.ts
-import { io, Socket } from 'socket.io-client';
-
 export class SocketService {
-  private socket: Socket | null = null;
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
+  private socket: WebSocket | null = null;
+  private status: ConnectionStatus = 'disconnected';
 
-  connect(roleId: number): void {
-    const token = TokenManager.getAccessToken();
+  // 发送语音流开始信号
+  public sendVoiceStreamStart(roleId: number, sessionId: string): boolean {
+    return this.sendMessage({
+      type: 'voice_stream_start',
+      payload: { roleId, sessionId },
+    });
+  }
+
+  // 发送音频数据
+  public sendAudioData(roleId: number, sessionId: string, audioData: ArrayBuffer): boolean {
+    // 创建包含元数据的二进制消息
+    const metadata = JSON.stringify({
+      type: 'voice_stream_data',
+      roleId,
+      sessionId,
+      timestamp: new Date().toISOString(),
+    });
     
-    this.socket = io('/chat', {
-      query: { roleId },
-      auth: { token },
-      transports: ['websocket', 'polling'],
-    });
-
-    this.setupEventListeners();
+    const metadataBuffer = new TextEncoder().encode(metadata);
+    const metadataLength = new Uint32Array([metadataBuffer.length]);
+    
+    // 组合元数据长度 + 元数据 + 音频数据
+    const combinedBuffer = new ArrayBuffer(4 + metadataBuffer.length + audioData.byteLength);
+    const view = new Uint8Array(combinedBuffer);
+    
+    view.set(new Uint8Array(metadataLength.buffer), 0);
+    view.set(metadataBuffer, 4);
+    view.set(new Uint8Array(audioData), 4 + metadataBuffer.length);
+    
+    this.socket.send(combinedBuffer);
+    return true;
   }
 
-  private setupEventListeners(): void {
-    if (!this.socket) return;
-
-    this.socket.on('connect', () => {
-      console.log('WebSocket连接成功');
-      this.reconnectAttempts = 0;
-    });
-
-    this.socket.on('disconnect', () => {
-      console.log('WebSocket连接断开');
-      this.handleReconnect();
-    });
-
-    this.socket.on('message', (message: API.ChatMessage) => {
-      // 处理接收到的消息（文本或语音）
-      this.handleMessage(message);
-    });
-
-    this.socket.on('typing', (data: { isTyping: boolean }) => {
-      // 处理角色正在输入状态
-      this.handleTypingStatus(data.isTyping);
-    });
-  }
-
-  // 发送文本消息
-  sendTextMessage(message: API.SendMessageRequest): void {
-    if (this.socket?.connected) {
-      this.socket.emit('sendTextMessage', message);
-    }
-  }
-
-  // 发送语音消息
-  sendVoiceMessage(message: API.SendMessageRequest): void {
-    if (this.socket?.connected) {
-      this.socket.emit('sendVoiceMessage', message);
-    }
-  }
-
-  // 通知开始输入
-  startTyping(): void {
-    if (this.socket?.connected) {
-      this.socket.emit('startTyping');
-    }
-  }
-
-  // 通知停止输入
-  stopTyping(): void {
-    if (this.socket?.connected) {
-      this.socket.emit('stopTyping');
-    }
-  }
-
-  private handleReconnect(): void {
-    if (this.reconnectAttempts < this.maxReconnectAttempts) {
-      this.reconnectAttempts++;
-      setTimeout(() => {
-        this.socket?.connect();
-      }, 1000 * this.reconnectAttempts);
-    }
-  }
-
-  disconnect(): void {
-    this.socket?.disconnect();
-    this.socket = null;
+  // 处理接收到的音频数据
+  private handleAudioData(data: ArrayBuffer): void {
+    const metadataLength = new Uint32Array(data.slice(0, 4))[0];
+    const metadataBuffer = data.slice(4, 4 + metadataLength);
+    const metadata = JSON.parse(new TextDecoder().decode(metadataBuffer));
+    const audioData = data.slice(4 + metadataLength);
+    
+    this.handlers.onVoiceStreamData?.(
+      metadata.roleId,
+      metadata.sessionId,
+      audioData
+    );
   }
 }
 ```
 
-#### 5.2.2 服务端推送事件
+#### 5.2.2 流式音频事件处理
 ```typescript
-// 接收文本消息
-socket.on('textMessage', (message: API.ChatMessage) => {
-  // 处理文本消息
-});
+// 流式音频事件类型
+interface StreamingAudioEvents {
+  // 语音流开始
+  'voice_stream_start': (data: { roleId: number, sessionId: string }) => void;
+  
+  // 语音流结束
+  'voice_stream_end': (data: { roleId: number, sessionId: string, duration: number }) => void;
+  
+  // 音频数据传输（二进制）
+  'voice_stream_data': (data: { roleId: number, sessionId: string, audioData: ArrayBuffer }) => void;
+  
+  // 文本消息
+  'chat_message': (data: { roleId: number, sessionId: string, message: any, timestamp: number }) => void;
+  
+  // 输入状态
+  'typing_start': (data: { roleId: number, sessionId: string }) => void;
+  'typing_stop': (data: { roleId: number, sessionId: string }) => void;
+}
 
-// 接收语音消息
-socket.on('voiceMessage', (message: API.ChatMessage) => {
-  // 处理语音消息，包含audioUrl
-});
-
-// 角色正在输入（文本模式）
-socket.on('roleTyping', (data: { roleId: number, isTyping: boolean }) => {
-  // 显示"正在输入..."状态
-});
-
-// 角色正在思考（语音模式）
-socket.on('roleThinking', (data: { roleId: number, isThinking: boolean }) => {
-  // 显示"正在思考..."状态
-});
-
-// 语音合成进度
-socket.on('voiceSynthesisProgress', (data: { 
-  messageId: string, 
-  progress: number, 
-  status: 'processing' | 'ready' | 'error' 
-}) => {
-  // 更新语音合成进度
-});
-
-// 连接状态
-socket.on('connectionStatus', (status: 'connected' | 'disconnected') => {
-  // 更新连接状态
-});
-
-// 错误处理
-socket.on('error', (error: { code: string, message: string }) => {
-  // 处理错误
+// 前端事件处理器设置
+const socketService = getSocketService();
+socketService.setHandlers({
+  onVoiceStreamStart: (roleId, sessionId) => {
+    console.log('语音流开始:', roleId, sessionId);
+  },
+  onVoiceStreamData: (roleId, sessionId, audioData) => {
+    // 播放接收到的音频数据
+    audioPlayer.playAudioChunk(audioData);
+  },
+  onVoiceStreamEnd: (roleId, sessionId, duration) => {
+    console.log('语音流结束:', roleId, sessionId, duration);
+  }
 });
 ```
 
@@ -926,7 +859,7 @@ const RoleDetail = lazy(() => import('./pages/Role/Detail'));
 - **图片懒加载**: 角色头像使用Intersection Observer
 - **音频预加载**: 热门角色语音样本预加载
 - **缓存策略**: 角色数据本地缓存5分钟
-- **压缩优化**: 音频文件使用高压缩比格式
+- **压缩优化**: 实时音频流使用高效压缩
 
 ### 6.2 运行时优化
 
@@ -1044,21 +977,6 @@ export const validateMessage = (content: string): { valid: boolean; error?: stri
   return { valid: true };
 };
 
-// 音频文件验证
-export const validateAudioFile = (file: File): { valid: boolean; error?: string } => {
-  const maxSize = 10 * 1024 * 1024; // 10MB
-  const allowedTypes = ['audio/webm', 'audio/mp3', 'audio/wav', 'audio/ogg'];
-  
-  if (file.size > maxSize) {
-    return { valid: false, error: '音频文件不能超过10MB' };
-  }
-  
-  if (!allowedTypes.includes(file.type)) {
-    return { valid: false, error: '不支持的音频格式' };
-  }
-  
-  return { valid: true };
-};
 ```
 
 ## 8. 部署架构
@@ -1192,4 +1110,49 @@ export class PerformanceMonitor {
 }
 ```
 
-通过这个详细的技术设计文档，我们为AI角色扮演聊天功能提供了完整的技术实现指南，确保能够在现有架构基础上高质量地实现所有需求功能。
+## 9. 后端服务架构
+
+### 9.1 后端处理概述
+后端负责接收前端发送的识别文本，调用阿里云LLM生成回复，然后调用阿里云TTS生成音频流返回前端。
+
+### 9.2 后端服务架构
+```
+后端WebSocket服务 (Node.js + Express)
+├── 连接管理
+│   ├── 前端WebSocket连接处理
+│   ├── 会话状态管理
+│   └── 断线重连机制
+├── 文本处理
+│   ├── 接收前端STT识别文本
+│   ├── 角色上下文管理
+│   └── 对话历史维护
+├── AI服务集成
+│   ├── 阿里云LLM调用
+│   ├── 角色个性化回复
+│   └── 上下文传递
+└── 音频输出
+    ├── 阿里云TTS实时合成
+    ├── 音频流分片发送
+    └── 质量自适应
+```
+
+### 9.3 技术要求
+- **Node.js**: >= 16.0.0
+- **音频处理**: FFmpeg for audio format conversion
+- **STT服务**: 前端直连阿里云实时STT服务
+- **TTS服务**: 阿里云实时TTS API
+- **AI服务**: 阿里云LLM大模型API
+- **认证**: 阿里云AccessKey认证
+
+## 10. 总结
+
+通过这个详细的技术设计文档，我们为AI角色扮演聊天功能提供了完整的技术实现指南，基于前端直连阿里云STT和后端集成LLM+TTS的架构设计，确保能够在现有架构基础上高质量地实现所有需求功能。
+
+主要技术亮点：
+- 基于现有Ant Design Pro架构的无缝集成
+- 前端直连阿里云STT实现低延迟语音识别
+- 双WebSocket连接架构（前端↔阿里云STT，前端↔后端）
+- 后端专注于LLM对话和TTS音频生成
+- 完善的状态管理和错误处理机制
+- 良好的可扩展性和维护性
+- 充分利用阿里云AI服务的技术优势
