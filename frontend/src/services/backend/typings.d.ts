@@ -7,6 +7,20 @@ declare namespace API {
     password: string;
   };
 
+  type Character = {
+    id: number;
+    background: string;
+    name: string;
+    avatar: string;
+    description: string;
+    open_line: string;
+    tags: string[];
+    is_public: boolean;
+    user_id: number;
+    created_at: number;
+    updated_at: number;
+  };
+
   type getUserByNameParams = {
     name: string;
     cursor: number;
@@ -35,6 +49,20 @@ declare namespace API {
     id: number;
     accessToken: string;
     refreshToken: string;
+  };
+
+  type NewCharacterRequest = {
+    background: string;
+    name: string;
+    avatar: string;
+    description: string;
+    open_line: string;
+    tags: number[];
+    is_public: boolean;
+  };
+
+  type NewCharacterResponse = {
+    character: Character;
   };
 
   type RefreshResponse = {
