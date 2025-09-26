@@ -9,27 +9,28 @@ import {
   Empty, 
   Spin, 
   Input, 
-  Select, 
-  Tabs, 
   message,
-  Modal
+  Modal,
+  Tag,
+  Avatar
 } from 'antd';
 import { 
   PlusOutlined, 
   UserOutlined, 
   RobotOutlined, 
   SearchOutlined,
-  FilterOutlined,
-  ExclamationCircleOutlined
+  ExclamationCircleOutlined,
+  EditOutlined,
+  MessageOutlined
 } from '@ant-design/icons';
 import { history } from 'umi';
 import { useEffect, useState } from 'react';
 import { RoleCard } from '@/components/Role';
 import { getMyRoles, getRoleList, searchRoles, deleteRole } from '@/services/backend/role';
+import './index.less';
 
 const { Title } = Typography;
 const { Search } = Input;
-const { Option } = Select;
 
 // 角色分类选项
 const roleCategories = [
@@ -44,16 +45,10 @@ const roleCategories = [
   { label: '其他', value: 'other' },
 ];
 
-// 排序选项
-const sortOptions = [
-  { label: '最新创建', value: 'created_desc' },
-  { label: '最受欢迎', value: 'popularity_desc' },
-  { label: '名称排序', value: 'name_asc' },
-];
+
 
 const RoleHome: React.FC = () => {
   // 状态管理
-  const [activeTab, setActiveTab] = useState('discover');
   const [myRoles, setMyRoles] = useState<API.Role[]>([]);
   const [discoverRoles, setDiscoverRoles] = useState<API.Role[]>([]);
   const [searchResults, setSearchResults] = useState<API.Role[]>([]);
@@ -66,7 +61,6 @@ const RoleHome: React.FC = () => {
   // 搜索和筛选状态
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedSort, setSelectedSort] = useState('created_desc');
   const [isSearchMode, setIsSearchMode] = useState(false);
 
   // 分页状态
@@ -272,6 +266,153 @@ const RoleHome: React.FC = () => {
     }
   };
 
+  // 渲染我的角色横向卡片
+  const renderMyRolesSection = () => {
+    const isLoading = loading.myRoles;
+    const roles = myRoles;
+
+    if (isLoading && roles.length === 0) {
+      return (
+        <div style={{ textAlign: 'center', padding: '50px' }}>
+          <Spin size="large" />
+        </div>
+      );
+    }
+
+    if (roles.length === 0) {
+      return (
+        <Card>
+          <Empty 
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description="您还没有创建任何角色"
+          >
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />} 
+              onClick={handleCreateRole}
+            >
+              创建第一个角色
+            </Button>
+          </Empty>
+        </Card>
+      );
+    }
+
+    return (
+      <>
+        {/* 横向滚动的角色卡片 */}
+        <div className="my-roles-scroll" style={{ 
+          overflowX: 'auto', 
+          paddingBottom: 16,
+          marginBottom: 16
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            gap: 16, 
+            minWidth: 'max-content',
+            paddingRight: 16
+          }}>
+            {roles.map((role) => (
+              <Card
+                key={role.id}
+                hoverable
+                className="my-role-card"
+                style={{ 
+                  width: 320,
+                  flexShrink: 0,
+                  borderRadius: 12,
+                  overflow: 'hidden'
+                }}
+                bodyStyle={{ padding: 16 }}
+                onClick={() => handleViewRoleDetail(role)}
+              >
+                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <Avatar 
+                    size={60} 
+                    src={role.avatar} 
+                    icon={<UserOutlined />}
+                    style={{ flexShrink: 0 }}
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ 
+                      fontWeight: 600, 
+                      fontSize: '16px', 
+                      marginBottom: 4,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {role.name}
+                    </div>
+                    <div style={{ 
+                      color: '#666', 
+                      fontSize: '13px', 
+                      marginBottom: 8,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden'
+                    }}>
+                      {role.description}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Space size={4}>
+                        {role.tags?.slice(0, 2).map((tag, index) => (
+                          <Tag key={index} size="small" color="blue">
+                            {tag}
+                          </Tag>
+                        ))}
+                        {role.tags && role.tags.length > 2 && (
+                          <Tag size="small" color="default">
+                            +{role.tags.length - 2}
+                          </Tag>
+                        )}
+                      </Space>
+                      <Space size={8}>
+                        <Button 
+                          type="text" 
+                          size="small"
+                          icon={<EditOutlined />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditRole(role);
+                          }}
+                        />
+                        <Button 
+                          type="primary" 
+                          size="small"
+                          icon={<MessageOutlined />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleChatWithRole(role);
+                          }}
+                        >
+                          聊天
+                        </Button>
+                      </Space>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+        
+        {/* 查看更多按钮 */}
+        {pagination.myRoles.hasMore && (
+          <div style={{ textAlign: 'center' }}>
+            <Button 
+              loading={loading.myRoles}
+              onClick={() => handleLoadMore('myRoles')}
+            >
+              查看更多我的角色
+            </Button>
+          </div>
+        )}
+      </>
+    );
+  };
+
   // 渲染角色网格
   const renderRoleGrid = (roles: API.Role[], type: 'myRoles' | 'discover' | 'search') => {
     const isLoading = loading[type === 'search' ? 'search' : type === 'myRoles' ? 'myRoles' : 'discover'];
@@ -361,69 +502,29 @@ const RoleHome: React.FC = () => {
     <PageContainer
       title={false}
       style={{ padding: '24px' }}
+      className="role-home-page"
     >
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        {/* 搜索和筛选区域 */}
+        {/* 搜索区域 */}
         <Card style={{ marginBottom: 24 }}>
-          <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-            {/* 搜索框 */}
-            <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-              <Search
-                placeholder="搜索角色名称、描述或标签..."
-                allowClear
-                enterButton={<SearchOutlined />}
-                size="large"
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-                onSearch={handleSearch}
-                onClear={handleClearSearch}
-                style={{ flex: 1 }}
-              />
-              <Button 
-                type="primary" 
-                icon={<PlusOutlined />} 
-                onClick={handleCreateRole}
-                size="large"
-              >
-                创建角色
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+            <Search
+              placeholder="搜索角色名称、描述或标签..."
+              allowClear
+              enterButton={<SearchOutlined />}
+              size="large"
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              onSearch={handleSearch}
+              onClear={handleClearSearch}
+              style={{ flex: 1 }}
+            />
+            {isSearchMode && (
+              <Button onClick={handleClearSearch}>
+                清除搜索
               </Button>
-            </div>
-            
-            {/* 筛选器 */}
-            <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-              <FilterOutlined style={{ color: '#666' }} />
-              <Select
-                value={selectedCategory}
-                onChange={handleCategoryChange}
-                style={{ width: 120 }}
-                placeholder="分类"
-              >
-                {roleCategories.map(category => (
-                  <Option key={category.value} value={category.value}>
-                    {category.label}
-                  </Option>
-                ))}
-              </Select>
-              <Select
-                value={selectedSort}
-                onChange={setSelectedSort}
-                style={{ width: 120 }}
-                placeholder="排序"
-              >
-                {sortOptions.map(option => (
-                  <Option key={option.value} value={option.value}>
-                    {option.label}
-                  </Option>
-                ))}
-              </Select>
-              
-              {isSearchMode && (
-                <Button onClick={handleClearSearch}>
-                  清除搜索
-                </Button>
-              )}
-            </div>
-          </Space>
+            )}
+          </div>
         </Card>
 
         {/* 内容区域 */}
@@ -437,34 +538,60 @@ const RoleHome: React.FC = () => {
             {renderRoleGrid(searchResults, 'search')}
           </div>
         ) : (
-          /* 标签页内容 */
-          <Tabs 
-            activeKey={activeTab} 
-            onChange={setActiveTab}
-            size="large"
-            items={[
-              {
-                key: 'discover',
-                label: (
-                  <span>
-                    <RobotOutlined />
-                    发现角色 ({pagination.discover.total})
-                  </span>
-                ),
-                children: renderRoleGrid(discoverRoles, 'discover'),
-              },
-              {
-                key: 'myRoles',
-                label: (
-                  <span>
-                    <UserOutlined />
-                    我的角色 ({pagination.myRoles.total})
-                  </span>
-                ),
-                children: renderRoleGrid(myRoles, 'myRoles'),
-              },
-            ]}
-          />
+          /* 分段式布局 */
+          <>
+            {/* 我的角色段落 */}
+            <div style={{ marginBottom: 48 }}>
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                marginBottom: 24 
+              }}>
+                <Title level={2} style={{ margin: 0 }}>
+                  <UserOutlined style={{ marginRight: 8, color: '#1890ff' }} />
+                  我的角色 ({pagination.myRoles.total})
+                </Title>
+                <Button 
+                  type="primary" 
+                  icon={<PlusOutlined />} 
+                  onClick={handleCreateRole}
+                  size="large"
+                >
+                  创建新角色
+                </Button>
+              </div>
+              {renderMyRolesSection()}
+            </div>
+
+            {/* 全部角色段落 */}
+            <div>
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                marginBottom: 24 
+              }}>
+                <Title level={2} style={{ margin: 0 }}>
+                  <RobotOutlined style={{ marginRight: 8, color: '#52c41a' }} />
+                  发现角色 ({pagination.discover.total})
+                </Title>
+                {/* 标签筛选器 */}
+                <Space wrap className="category-filters">
+                  {roleCategories.slice(1).map(category => (
+                    <Tag.CheckableTag
+                      key={category.value}
+                      checked={selectedCategory === category.value}
+                      onChange={(checked) => handleCategoryChange(checked ? category.value : '')}
+                    >
+                      {category.label}
+                    </Tag.CheckableTag>
+                  ))}
+                </Space>
+              </div>
+              {renderRoleGrid(discoverRoles, 'discover')}
+            </div>
+          </>
         )}
       </div>
     </PageContainer>

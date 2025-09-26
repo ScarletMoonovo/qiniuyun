@@ -19,7 +19,7 @@ export async function getInitialState(): Promise<InitialState> {
   const initialState: InitialState = {
     currentUser: undefined,
   };
-  
+
   // 如果不是登录页面，且有 token，尝试获取用户信息
   const { location } = history;
   if (location.pathname !== loginPath) {
@@ -30,8 +30,7 @@ export async function getInitialState(): Promise<InitialState> {
         try {
           // 使用存储的用户 ID 获取用户信息
           const res = await getUser({ id: userId });
-          const userInfo = res.user
-          console.log("userInfo: ", userInfo)
+          const userInfo = res.user;
           // 直接使用用户信息
           initialState.currentUser = {
             ...userInfo,
@@ -89,9 +88,7 @@ export const layout: RunTimeLayoutConfig = ({ initialState }) => {
 export function rootContainer(container: any) {
   return (
     <ConfigProvider locale={zhCN}>
-      <App>
-        {container}
-      </App>
+      <App>{container}</App>
     </ConfigProvider>
   );
 }
