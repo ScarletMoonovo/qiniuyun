@@ -35,5 +35,6 @@ EmailService:
   Host: "example@email.com"
 
 LLM:
-  ApiKey: "xxx"
-  Host: "https://xxx.com"
+  ApiKey: ""
+  BaseURL: ""
+  Model: "deepseek-v3.1"

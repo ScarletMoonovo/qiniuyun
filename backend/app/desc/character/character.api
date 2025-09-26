@@ -5,6 +5,23 @@ info(
     desc: "角色模块"
 )
 
+// 通用结构
+type (
+    Character {
+        Id int64 `json:"id"`
+        Background string `json:"background"`
+        Name string `json:"name"`
+        Avatar string `json:"avatar"`
+        Description string `json:"description"`
+        OpenLine string `json:"open_line"`
+        Tags []string `json:"tags"`
+        IsPublic bool `json:"is_public"`
+        UserId int64 `json:"user_id"`
+        CreatedAt int64 `json:"created_at"`
+        UpdatedAt int64 `json:"updated_at"`
+    }
+)
+
 //新建角色
 type (
     NewCharacterRequest {
@@ -13,18 +30,22 @@ type (
         Avatar string `json:"avatar"`
         Description string `json:"description"`
         OpenLine string `json:"open_line"`
+        Voice int `json:"voice"`
+        Tags []int64 `json:"tags"`
+        IsPublic bool `json:"is_public"`
     }
     NewCharacterResponse {
-
+        Character Character `json:"character"`
     }
 )
 
 @server(
     group: character
+    prefix: api
     middleware: Auth
 )
 
 service api {
     @handler newCharacter
-    post /character (NewCharacterRequest) returns ()
+    post /character (NewCharacterRequest) returns (NewCharacterResponse)
 }

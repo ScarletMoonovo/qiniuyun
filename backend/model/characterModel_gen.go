@@ -4,8 +4,10 @@ package model
 
 import (
 	"context"
-	"database/sql"
+	"database/sql/driver"
+	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"time"
 
 	"github.com/SpectatorNan/gorm-zero/gormc"
@@ -44,10 +46,10 @@ type (
 		Description   string         `gorm:"column:description"`
 		Background    string         `gorm:"column:background"`
 		OpenLine      string         `gorm:"column:open_line"`
-		Personality   sql.NullString `gorm:"column:personality"`
-		InitialMemory sql.NullString `gorm:"column:initial_memory"`
-		SystemPrompt  sql.NullString `gorm:"column:system_prompt"`
-		AvatarUrl     sql.NullString `gorm:"column:avatar_url"`
+		Personality   StringArray    `gorm:"column:personality"`
+		InitialMemory StringArray    `gorm:"column:initial_memory"`
+		SystemPrompt  string         `gorm:"column:system_prompt"`
+		AvatarUrl     string         `gorm:"column:avatar_url"`
 		IsPublic      int64          `gorm:"column:is_public"`
 		Status        int64          `gorm:"column:status"`
 		CreatedAt     time.Time      `gorm:"column:created_at"`
@@ -55,6 +57,20 @@ type (
 		DeletedAt     gorm.DeletedAt `gorm:"column:deleted_at;index"`
 	}
 )
+
+type StringArray []string
+
+func (s StringArray) Value() (driver.Value, error) {
+	return json.Marshal(s)
+}
+
+func (s *StringArray) Scan(value interface{}) error {
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New("type assertion to []byte failed")
+	}
+	return json.Unmarshal(bytes, s)
+}
 
 func (Character) TableName() string {
 	return "`character`"

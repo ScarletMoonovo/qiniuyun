@@ -9,3 +9,6 @@ info (
 )
 
 import "user/user.api"
+import "base/base.api"
+import "character/character.api"
+import "chat/chat.api"

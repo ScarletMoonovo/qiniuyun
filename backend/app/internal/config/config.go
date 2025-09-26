@@ -23,6 +23,11 @@ type Config struct {
 	Mysql        mysql.Mysql
 	CacheRedis   cache.CacheConf
 	EmailService EmailService
+	LLM          LLM
+	Qdrant       struct {
+		Host string
+		Port int
+	}
 }
 
 type EmailService struct {
@@ -31,4 +36,10 @@ type EmailService struct {
 	Password string
 	Host     string
 	Username string
+}
+
+type LLM struct {
+	ApiKey  string
+	BaseURL string
+	Model   string
 }

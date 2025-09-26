@@ -1,0 +1,64 @@
+syntax = "v1"
+
+info(
+    title: "聊天模块"
+    desc: "聊天模块"
+)
+
+type (
+    Session {
+        SessionId int64 `json:"session_id"`
+        UserId int64 `json:"user_id"`
+        CharacterId int64 `json:"character_id"`
+        Title string `json:"title"`
+        CreatedAt int64 `json:"created_at"`
+        UpdatedAt int64 `json:"updated_at"`
+    }
+    Message {
+        Role string `json:"role"`
+        Content string `json:"content"`
+        CreatedAt int64 `json:"created_at"`
+    }
+)
+
+// 新建对话
+type (
+    NewSessionRequest {
+        CharacterId int64 `json:"character_id"`
+        Title string `json:"title"`
+    }
+    NewSessionResponse {
+        SessionId int64 `json:"session_id"`
+    }
+)
+
+// 获取历史对话
+type (
+    GetSessionRequest {
+        Cursor int64 `json:"cursor"`
+        PageSize int64 `json:"pageSize"`
+    }
+    GetSessionResponse {
+        Sessions []Session `json:"sessions"`
+    }
+)
+
+// 聊天
+type (
+    ChatRequest {
+        SessionId int64 `json:"session_id"`
+    }
+)
+@server(
+    group: chat
+    prefix: api
+    middleware: Auth
+)
+service api {
+    @handler newSession
+    post /session (NewSessionRequest) returns (NewSessionResponse)
+    @handler getSession
+    get /session (GetSessionRequest) returns (GetSessionResponse)
+    @handler chat
+    get /chat (ChatRequest)
+}

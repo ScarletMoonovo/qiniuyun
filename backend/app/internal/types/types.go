@@ -9,6 +9,33 @@ type ChangePwdRequest struct {
 	Password string `json:"password" validate:"alphanum,min=8,max=16"`
 }
 
+type Character struct {
+	Id          int64    `json:"id"`
+	Background  string   `json:"background"`
+	Name        string   `json:"name"`
+	Avatar      string   `json:"avatar"`
+	Description string   `json:"description"`
+	OpenLine    string   `json:"open_line"`
+	Tags        []string `json:"tags"`
+	IsPublic    bool     `json:"is_public"`
+	UserId      int64    `json:"user_id"`
+	CreatedAt   int64    `json:"created_at"`
+	UpdatedAt   int64    `json:"updated_at"`
+}
+
+type ChatRequest struct {
+	SessionId int64 `json:"session_id"`
+}
+
+type GetSessionRequest struct {
+	Cursor   int64 `json:"cursor"`
+	PageSize int64 `json:"pageSize"`
+}
+
+type GetSessionResponse struct {
+	Sessions []Session `json:"sessions"`
+}
+
 type GetUserByNameRequest struct {
 	Name     string `form:"name" validate:"required,excludesall=;#<>"`
 	Cursor   int64  `form:"cursor"`
@@ -39,6 +66,36 @@ type LoginResponse struct {
 	RefreshToken string `json:"refreshToken"`
 }
 
+type Message struct {
+	Role      string `json:"role"`
+	Content   string `json:"content"`
+	CreatedAt int64  `json:"created_at"`
+}
+
+type NewCharacterRequest struct {
+	Background  string  `json:"background"`
+	Name        string  `json:"name"`
+	Avatar      string  `json:"avatar"`
+	Description string  `json:"description"`
+	OpenLine    string  `json:"open_line"`
+	Voice       int     `json:"voice"`
+	Tags        []int64 `json:"tags"`
+	IsPublic    bool    `json:"is_public"`
+}
+
+type NewCharacterResponse struct {
+	Character Character `json:"character"`
+}
+
+type NewSessionRequest struct {
+	CharacterId int64  `json:"character_id"`
+	Title       string `json:"title"`
+}
+
+type NewSessionResponse struct {
+	SessionId int64 `json:"session_id"`
+}
+
 type RefreshResponse struct {
 	AccessToken  string `json:"accessToken"`
 	RefreshToken string `json:"refreshToken"`
@@ -55,6 +112,25 @@ type RegisterResponse struct {
 	ID           int64  `json:"id"`
 	AccessToken  string `json:"accessToken"`
 	RefreshToken string `json:"refreshToken"`
+}
+
+type Session struct {
+	SessionId   int64  `json:"session_id"`
+	UserId      int64  `json:"user_id"`
+	CharacterId int64  `json:"character_id"`
+	Title       string `json:"title"`
+	CreatedAt   int64  `json:"created_at"`
+	UpdatedAt   int64  `json:"updated_at"`
+}
+
+type Tag struct {
+	Id   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+type UploadTokenResponse struct {
+	Token string `json:"token"`
+	Key   string `json:"key"`
 }
 
 type User struct {
