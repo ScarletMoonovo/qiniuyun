@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useParams, history } from 'umi';
 import {
   Card,
@@ -45,6 +45,7 @@ const AIChat: React.FC = () => {
   const [characterInfo, setCharacterInfo] = useState<API.Character | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<any>(null);
+  const streamingMessageRef = useRef<string | null>(null); // 跟踪当前流式消息ID
 
   // WebSocket连接URL - 这里先使用模拟的URL，实际项目中需要根据后端配置
   const wsUrl = sessionId ? `ws://192.168.196.54:10086/api/chat/${sessionId}` : null;
@@ -90,6 +91,37 @@ const AIChat: React.FC = () => {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  // 处理流式消息更新的回调函数
+  const handleStreamingUpdate = useCallback((content: string) => {
+    setMessages((prev) => {
+      const lastMsg = prev[prev.length - 1];
+      
+      if (lastMsg && lastMsg.role === 'assistant' && lastMsg.status === 'streaming' && 
+          streamingMessageRef.current === lastMsg.id) {
+        // 更新最后一条流式消息
+        const updatedMessages = [...prev];
+        const lastIndex = updatedMessages.length - 1;
+        updatedMessages[lastIndex] = {
+          ...updatedMessages[lastIndex],
+          content: updatedMessages[lastIndex].content + content
+        };
+        return updatedMessages;
+      } else {
+        // 创建新的流式消息
+        const streamingMessageId = `ai-streaming-${Date.now()}-${Math.random()}`;
+        const streamingMessage: ShowMessage = {
+          id: streamingMessageId,
+          content: content,
+          role: 'assistant',
+          timestamp: Date.now(),
+          status: 'streaming',
+        };
+        streamingMessageRef.current = streamingMessageId;
+        return [...prev, streamingMessage];
+      }
+    });
+  }, []);
 
   // 初始化会话
   const initSession = async () => {
@@ -154,30 +186,11 @@ const AIChat: React.FC = () => {
         };
         setMessages((prev) => [...prev, newMessage]);
       } else if (type === 'delta' && content) {
-        // 流式数据 - 追加到最后一条AI消息
-        setMessages((prev) => {
-          const lastMsg = prev[prev.length - 1];
-          if (lastMsg && lastMsg.role === 'assistant' && lastMsg.status === 'streaming') {
-            // 更新最后一条流式消息
-            return prev.map((msg, index) =>
-              index === prev.length - 1
-                ? { ...msg, content: msg.content + content }
-                : msg
-            );
-          } else {
-            // 创建新的流式消息
-            const streamingMessage: ShowMessage = {
-              id: `ai-streaming-${Date.now()}`,
-              content: content,
-              role: 'assistant',
-              timestamp: Date.now(),
-              status: 'streaming',
-            };
-            return [...prev, streamingMessage];
-          }
-        });
+        // 流式数据 - 使用专门的回调函数处理
+        handleStreamingUpdate(content);
       } else if (type === 'done') {
         // 流式数据结束，更新消息状态
+        streamingMessageRef.current = null; // 清空流式消息ID
         setMessages((prev) =>
           prev.map((msg) =>
             msg.role === 'assistant' && msg.status === 'streaming'
@@ -187,7 +200,7 @@ const AIChat: React.FC = () => {
         );
       }
     }
-  }, [lastMessage]);
+  }, [lastMessage, handleStreamingUpdate]);
 
   // 发送消息
   const handleSendMessage = async () => {
