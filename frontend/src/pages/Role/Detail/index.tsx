@@ -1,4 +1,3 @@
-import { deleteRole, getRoleDetail, getRoleStats } from '@/services/backend/role';
 import {
   CalendarOutlined,
   EditOutlined,
@@ -30,13 +29,14 @@ import {
 } from 'antd';
 import { useEffect, useState } from 'react';
 import { history, useParams } from 'umi';
+// import { getRoleDetail, getRoleStats, deleteRole } from '@/services/backend/character';
 import './index.less';
 
 const { Title, Paragraph, Text } = Typography;
 
 const RoleDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [role, setRole] = useState<API.Role | null>(null);
+  const [role, setRole] = useState<API.Character | null>(null);
   const [stats, setStats] = useState<{
     totalChats: number;
     totalMessages: number;
@@ -59,14 +59,32 @@ const RoleDetail: React.FC = () => {
 
       try {
         setLoading(true);
-        const response = await getRoleDetail({ id: parseInt(id) });
-        if (response?.role) {
-          setRole(response.role);
-          // 获取角色统计信息
-          fetchRoleStats(parseInt(id));
-        } else {
-          setError('角色不存在');
-        }
+        // TODO: 实现获取角色详情接口
+        // const response = await getRoleDetail({ id: parseInt(id) });
+        // if (response?.role) {
+        //   setRole(response.role);
+        //   // 获取角色统计信息
+        //   fetchRoleStats(parseInt(id));
+        // } else {
+        //   setError('角色不存在');
+        // }
+        
+        // 临时模拟数据
+        const mockRole: API.Character = {
+          id: parseInt(id),
+          name: '示例角色',
+          avatar: '',
+          description: '这是一个示例角色的描述',
+          background: '这是角色的背景故事',
+          open_line: '你好，我是示例角色',
+          tags: ['友善', '智能'],
+          is_public: true,
+          user_id: 1,
+          created_at: Date.now(),
+          updated_at: Date.now(),
+        };
+        setRole(mockRole);
+        fetchRoleStats(parseInt(id));
       } catch (error: any) {
         console.error('获取角色详情失败:', error);
         setError(error?.message || '获取角色详情失败');
@@ -82,10 +100,20 @@ const RoleDetail: React.FC = () => {
   const fetchRoleStats = async (roleId: number) => {
     try {
       setStatsLoading(true);
-      const response = await getRoleStats(roleId);
-      if (response) {
-        setStats(response);
-      }
+      // TODO: 实现获取角色统计接口
+      // const response = await getRoleStats(roleId);
+      // if (response) {
+      //   setStats(response);
+      // }
+      
+      // 临时模拟数据
+      const mockStats = {
+        totalChats: 156,
+        totalMessages: 2340,
+        avgRating: 4.5,
+        lastChatAt: new Date().toISOString(),
+      };
+      setStats(mockStats);
     } catch (error) {
       console.error('获取角色统计失败:', error);
     } finally {
@@ -122,7 +150,8 @@ const RoleDetail: React.FC = () => {
       cancelText: '取消',
       onOk: async () => {
         try {
-          await deleteRole(role.id);
+          // TODO: 实现删除角色接口
+          // await deleteRole(role.id);
           message.success('角色删除成功');
           history.push('/role/home');
         } catch (error: any) {
@@ -254,7 +283,9 @@ const RoleDetail: React.FC = () => {
                   {role.name}
                 </Title>
                 <Text type="secondary" style={{ fontSize: '16px' }}>
-                  {role.category}
+                  {/* TODO: 添加category字段到Character类型 */}
+                  {/* {role.category} */}
+                  AI角色
                 </Text>
                 <div style={{ marginTop: 12 }}>
                   <Space wrap>
@@ -286,33 +317,25 @@ const RoleDetail: React.FC = () => {
             <Paragraph style={{ fontSize: '15px', lineHeight: 1.8 }}>{role.description}</Paragraph>
           </Card>
 
-          {/* 性格特征 */}
-          <Card title="性格特征" style={{ marginTop: 24 }}>
-            <Paragraph style={{ fontSize: '15px', lineHeight: 1.8 }}>{role.personality}</Paragraph>
-          </Card>
-
           {/* 角色背景 */}
           <Card title="角色背景" style={{ marginTop: 24 }}>
             <Paragraph style={{ fontSize: '15px', lineHeight: 1.8 }}>{role.background}</Paragraph>
           </Card>
 
           {/* 开场白 */}
-          {role.quotes && role.quotes.length > 0 && (
+          {role.open_line && (
             <Card title="开场白" style={{ marginTop: 24 }}>
               <Space direction="vertical" style={{ width: '100%' }}>
-                {role.quotes.map((quote, index) => (
-                  <Card
-                    key={index}
-                    size="small"
-                    style={{
-                      background: '#f8f9fa',
-                      border: '1px solid #e9ecef',
-                      fontStyle: 'italic',
-                    }}
-                  >
-                    "{quote}"
-                  </Card>
-                ))}
+                <Card
+                  size="small"
+                  style={{
+                    background: '#f8f9fa',
+                    border: '1px solid #e9ecef',
+                    fontStyle: 'italic',
+                  }}
+                >
+                  "{role.open_line}"
+                </Card>
               </Space>
             </Card>
           )}
@@ -350,40 +373,39 @@ const RoleDetail: React.FC = () => {
           </Card>
 
           {/* 创建者信息 */}
-          {role.creator && (
+          {/* TODO: 添加creator字段到Character类型，或通过user_id获取用户信息 */}
+          {/* {role.creator && (
             <Card title="创建者" style={{ marginTop: 24 }}>
               <Space>
-                <Avatar size={40} src={role.creator.avatar} icon={<UserOutlined />} />
+                <Avatar size={40} icon={<UserOutlined />} />
                 <div>
-                  <div style={{ fontWeight: 500 }}>{role.creator.name}</div>
+                  <div style={{ fontWeight: 500 }}>用户{role.user_id}</div>
                   <Text type="secondary" style={{ fontSize: '12px' }}>
                     创建者
                   </Text>
                 </div>
               </Space>
             </Card>
-          )}
+          )} */}
 
           {/* 角色详细信息 */}
           <Card title="详细信息" style={{ marginTop: 24 }}>
             <Descriptions column={1} size="small">
-              <Descriptions.Item label="人气值">
-                <Text strong>{role.popularity || 0}</Text>
-              </Descriptions.Item>
               <Descriptions.Item label="声音模型">
                 <Space>
                   <SoundOutlined />
-                  <Text>{role.voiceStyle}</Text>
+                  {/* TODO: 添加voiceStyle字段到Character类型 */}
+                  <Text>默认声音</Text>
                 </Space>
               </Descriptions.Item>
               <Descriptions.Item label="创建时间">
                 <Space>
                   <CalendarOutlined />
-                  <Text>{formatDate(role.createdAt)}</Text>
+                  <Text>{formatDate(new Date(role.created_at).toISOString())}</Text>
                 </Space>
               </Descriptions.Item>
               <Descriptions.Item label="更新时间">
-                <Text>{formatDate(role.updatedAt)}</Text>
+                <Text>{formatDate(new Date(role.updated_at).toISOString())}</Text>
               </Descriptions.Item>
             </Descriptions>
           </Card>

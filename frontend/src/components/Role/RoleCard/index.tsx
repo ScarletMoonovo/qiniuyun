@@ -1,24 +1,24 @@
-import React from 'react';
-import { Card, Avatar, Tag, Space, Button, Dropdown, Tooltip, Typography } from 'antd';
-import { 
-  MessageOutlined, 
-  EditOutlined, 
-  DeleteOutlined, 
+import {
+  DeleteOutlined,
+  EditOutlined,
   EyeOutlined,
+  HeartFilled,
+  HeartOutlined,
+  MessageOutlined,
   MoreOutlined,
   UserOutlined,
-  HeartOutlined,
-  HeartFilled
 } from '@ant-design/icons';
-import { history } from 'umi';
 import type { MenuProps } from 'antd';
+import { Avatar, Button, Card, Dropdown, Space, Tag, Tooltip, Typography } from 'antd';
+import React from 'react';
+import { history } from 'umi';
 import './index.less';
 
 const { Text, Paragraph } = Typography;
 
 interface RoleCardProps {
   /** 角色数据 */
-  role: API.Role;
+  role: API.Character;
   /** 是否显示创建者信息 */
   showCreator?: boolean;
   /** 是否显示编辑和删除按钮（仅对自己创建的角色） */
@@ -32,15 +32,15 @@ interface RoleCardProps {
   /** 卡片类名 */
   className?: string;
   /** 点击查看详情回调 */
-  onView?: (role: API.Role) => void;
+  onView?: (role: API.Character) => void;
   /** 点击开始聊天回调 */
-  onChat?: (role: API.Role) => void;
+  onChat?: (role: API.Character) => void;
   /** 点击编辑回调 */
-  onEdit?: (role: API.Role) => void;
+  onEdit?: (role: API.Character) => void;
   /** 点击删除回调 */
-  onDelete?: (role: API.Role) => void;
+  onDelete?: (role: API.Character) => void;
   /** 点击收藏回调 */
-  onFavorite?: (role: API.Role, favorited: boolean) => void;
+  onFavorite?: (role: API.Character, favorited: boolean) => void;
 }
 
 const RoleCard: React.FC<RoleCardProps> = ({
@@ -103,63 +103,79 @@ const RoleCard: React.FC<RoleCardProps> = ({
     }
   };
 
+  // 处理菜单点击
+  const handleMenuClick = ({ key }: { key: string }) => {
+    switch (key) {
+      case 'view':
+        handleView({} as React.MouseEvent);
+        break;
+      case 'edit':
+        handleEdit({} as React.MouseEvent);
+        break;
+      case 'delete':
+        handleDelete({} as React.MouseEvent);
+        break;
+    }
+  };
+
   // 更多操作菜单
   const moreMenuItems: MenuProps['items'] = [
     {
       key: 'view',
       icon: <EyeOutlined />,
       label: '查看详情',
-      onClick: handleView,
     },
-    ...(showOwnerActions ? [
-      {
-        key: 'edit',
-        icon: <EditOutlined />,
-        label: '编辑角色',
-        onClick: handleEdit,
-      },
-      {
-        type: 'divider' as const,
-      },
-      {
-        key: 'delete',
-        icon: <DeleteOutlined />,
-        label: '删除角色',
-        danger: true,
-        onClick: handleDelete,
-      },
-    ] : []),
+    ...(showOwnerActions
+      ? [
+          {
+            key: 'edit',
+            icon: <EditOutlined />,
+            label: '编辑角色',
+          },
+          {
+            type: 'divider' as const,
+          },
+          {
+            key: 'delete',
+            icon: <DeleteOutlined />,
+            label: '删除角色',
+            danger: true,
+          },
+        ]
+      : []),
   ];
 
   // 卡片操作按钮
   const cardActions = [
     <Tooltip title="开始聊天" key="chat">
-      <Button 
-        type="text" 
-        icon={<MessageOutlined />} 
+      <Button
+        type="text"
+        icon={<MessageOutlined />}
         onClick={handleChat}
         className="role-card-action"
       />
     </Tooltip>,
-    ...(showFavorite ? [
-      <Tooltip title={isFavorited ? "取消收藏" : "收藏角色"} key="favorite">
-        <Button 
-          type="text" 
-          icon={isFavorited ? <HeartFilled /> : <HeartOutlined />} 
-          onClick={handleFavorite}
-          className={`role-card-action ${isFavorited ? 'favorited' : ''}`}
-        />
-      </Tooltip>
-    ] : []),
-    <Dropdown 
-      menu={{ items: moreMenuItems }} 
-      placement="bottomRight" 
+    ...(showFavorite
+      ? [
+          <Tooltip title={isFavorited ? '取消收藏' : '收藏角色'} key="favorite">
+            <Button
+              type="text"
+              icon={isFavorited ? <HeartFilled /> : <HeartOutlined />}
+              onClick={handleFavorite}
+              className={`role-card-action ${isFavorited ? 'favorited' : ''}`}
+            />
+          </Tooltip>,
+        ]
+      : []),
+    <Dropdown
+      menu={{ items: moreMenuItems, onClick: handleMenuClick }}
+      placement="bottomRight"
       trigger={['click']}
       key="more"
     >
-      <Button 
-        type="text" 
-        icon={<MoreOutlined />} 
+      <Button
+        type="text"
+        icon={<MoreOutlined />}
         onClick={(e) => e.stopPropagation()}
         className="role-card-action"
       />
@@ -173,12 +189,7 @@ const RoleCard: React.FC<RoleCardProps> = ({
       style={style}
       cover={
         <div className="role-card-cover" onClick={handleView}>
-          <Avatar 
-            size={80} 
-            src={role.avatar} 
-            icon={<UserOutlined />}
-            className="role-avatar"
-          />
+          <Avatar size={80} src={role.avatar} icon={<UserOutlined />} className="role-avatar" />
         </div>
       }
       actions={cardActions}
@@ -194,7 +205,7 @@ const RoleCard: React.FC<RoleCardProps> = ({
 
         {/* 角色描述 */}
         <div className="role-description">
-          <Paragraph 
+          <Paragraph
             ellipsis={{ rows: 2, tooltip: role.description }}
             style={{ margin: 0, color: '#666', fontSize: '13px' }}
           >
@@ -207,21 +218,17 @@ const RoleCard: React.FC<RoleCardProps> = ({
           <div className="role-tags">
             <Space wrap size={[4, 4]}>
               {role.tags.slice(0, 3).map((tag, index) => (
-                <Tag key={index} size="small" color="blue">
+                <Tag key={index} color="blue">
                   {tag}
                 </Tag>
               ))}
-              {role.tags.length > 3 && (
-                <Tag size="small" color="default">
-                  +{role.tags.length - 3}
-                </Tag>
-              )}
+              {role.tags.length > 3 && <Tag color="default">+{role.tags.length - 3}</Tag>}
             </Space>
           </div>
         )}
 
         {/* 创建者信息 */}
-        {showCreator && role.creator && (
+        {/* {showCreator && role.creator && (
           <div className="role-creator">
             <Space size={4}>
               <Avatar size={16} src={role.creator.avatar} icon={<UserOutlined />} />
@@ -230,10 +237,10 @@ const RoleCard: React.FC<RoleCardProps> = ({
               </Text>
             </Space>
           </div>
-        )}
+        )} */}
 
         {/* 角色统计信息 */}
-        <div className="role-stats">
+        {/* <div className="role-stats">
           <Space split={<span style={{ color: '#d9d9d9' }}>|</span>}>
             <Text type="secondary" style={{ fontSize: '12px' }}>
               人气 {role.popularity || 0}
@@ -242,7 +249,7 @@ const RoleCard: React.FC<RoleCardProps> = ({
               {role.category}
             </Text>
           </Space>
-        </div>
+        </div> */}
       </div>
     </Card>
   );

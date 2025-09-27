@@ -35,15 +35,15 @@ const RoleCreate: React.FC = () => {
       try {
         // 获取声音模型
         setVoiceModelsLoading(true);
-        const voiceResponse = await getVoiceModels();
-        if (voiceResponse?.models) {
-          const modelOptions: VoiceModelOption[] = voiceResponse.models.map((model: API.VoiceModel) => ({
-            label: model.name,
-            value: model.id,
-            description: model.description,
-          }));
-          setVoiceModels(modelOptions);
-        }
+        // const voiceResponse = await getVoiceModels();
+        // if (voiceResponse?.models) {
+        //   const modelOptions: VoiceModelOption[] = voiceResponse.models.map((model: API.VoiceModel) => ({
+        //     label: model.name,
+        //     value: model.id,
+        //     description: model.description,
+        //   }));
+        //   setVoiceModels(modelOptions);
+        // }
 
         // 获取标签列表
         setTagsLoading(true);
@@ -64,7 +64,7 @@ const RoleCreate: React.FC = () => {
   }, []);
 
   const handleBack = () => {
-    history.back();
+    window.history.back();
   };
 
 
