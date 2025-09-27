@@ -2,6 +2,7 @@ import { Button, Space, Dropdown, message } from 'antd';
 import { CompassOutlined, PlusOutlined, RobotOutlined, SoundOutlined } from '@ant-design/icons';
 import { history } from 'umi';
 import type { MenuProps } from 'antd';
+import SessionHistory from './SessionHistory';
 
 const HeaderActions: React.FC = () => {
   const handleDiscoverClick = () => {
@@ -42,6 +43,8 @@ const HeaderActions: React.FC = () => {
       >
         发现
       </Button>
+      
+      <SessionHistory />
       
       <Dropdown 
         menu={{ items: createMenuItems }}
