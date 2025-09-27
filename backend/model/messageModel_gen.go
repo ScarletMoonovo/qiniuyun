@@ -38,12 +38,12 @@ type (
 	}
 
 	Message struct {
-		Id        int64     `gorm:"column:id"`
-		SessionId int64     `gorm:"column:session_id"` // 关联的会话ID
-		Role      string    `gorm:"column:role"`       // 消息角色
-		Content   string    `gorm:"column:content"`    // 消息内容
-		Metadata  string    `gorm:"column:metadata"`
-		CreatedAt time.Time `gorm:"column:created_at"`
+		Id        int64     `gorm:"column:id" json:"id"`
+		SessionId int64     `gorm:"column:session_id" json:"session_id"` // 关联的会话ID
+		Role      string    `gorm:"column:role" json:"role"`             // 消息角色
+		Content   string    `gorm:"column:content" json:"content"`       // 消息内容
+		Metadata  string    `gorm:"column:metadata" json:"metadata"`
+		CreatedAt time.Time `gorm:"column:created_at" json:"created_at"`
 	}
 )
 

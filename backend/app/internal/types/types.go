@@ -24,12 +24,12 @@ type Character struct {
 }
 
 type ChatRequest struct {
-	SessionId int64 `json:"session_id"`
+	SessionId int64 `path:"session_id"`
 }
 
 type GetSessionRequest struct {
-	Cursor   int64 `json:"cursor"`
-	PageSize int64 `json:"pageSize"`
+	Cursor   int64 `form:"cursor"`
+	PageSize int64 `form:"pageSize"`
 }
 
 type GetSessionResponse struct {
@@ -88,8 +88,7 @@ type NewCharacterResponse struct {
 }
 
 type NewSessionRequest struct {
-	CharacterId int64  `json:"character_id"`
-	Title       string `json:"title"`
+	CharacterId int64 `json:"character_id"`
 }
 
 type NewSessionResponse struct {
@@ -140,4 +139,13 @@ type User struct {
 	Birthday  int64  `json:"birthday,optional"`
 	Sex       string `json:"sex,options=[male,female],optional"`
 	Signature string `json:"signature,optional"`
+}
+
+type GetCharacterRequest struct {
+	PageSize int64 `form:"page_size"`
+	Tag      int64 `form:"tag,optional"`
+}
+
+type GetCharacterResponse struct {
+	Characters []Character `json:"characters"`
 }

@@ -3,6 +3,7 @@ package svc
 import (
 	"github.com/SpectatorNan/gorm-zero/gormc/config/mysql"
 	"github.com/go-playground/validator/v10"
+	"qiniuyun/backend/common/embedding"
 	"qiniuyun/backend/common/llm"
 
 	"github.com/go-redis/redis/v8"
@@ -24,11 +25,12 @@ type ServiceContext struct {
 	UserModel         model.UserModel
 	CharacterModel    model.CharacterModel
 	TagModel          model.TagModel
+	UserTagModel      model.UserTagModel
 	CharacterTagModel model.CharacterTagModel
 	SessionModel      model.SessionModel
 	MessageModel      model.MessageModel
-	Qdrant            *qdrant.Client
 	LLM               *llm.Client
+	Embedding         *embedding.Client
 }
 
 func NewServiceContext(c config.Config) *ServiceContext {
@@ -39,8 +41,9 @@ func NewServiceContext(c config.Config) *ServiceContext {
 	}
 
 	qdrantClient, err := qdrant.NewClient(&qdrant.Config{
-		Host: c.Qdrant.Host,
-		Port: c.Qdrant.Port,
+		Host:   c.Qdrant.Host,
+		Port:   c.Qdrant.Port,
+		UseTLS: false,
 	})
 	if err != nil {
 		panic(err)
@@ -55,10 +58,11 @@ func NewServiceContext(c config.Config) *ServiceContext {
 		UserModel:         model.NewUserModel(db, c.CacheRedis),
 		CharacterModel:    model.NewCharacterModel(db, c.CacheRedis),
 		TagModel:          model.NewTagModel(db, c.CacheRedis),
+		UserTagModel:      model.NewUserTagModel(db, c.CacheRedis),
 		CharacterTagModel: model.NewCharacterTagModel(db, c.CacheRedis),
 		SessionModel:      model.NewSessionModel(db, c.CacheRedis),
 		MessageModel:      model.NewMessageModel(db, c.CacheRedis),
 		LLM:               llm.New(c.LLM.ApiKey, c.LLM.Model, c.LLM.BaseURL),
-		Qdrant:            qdrantClient,
+		Embedding:         embedding.New(c.Embedding.BaseURL, qdrantClient),
 	}
 }

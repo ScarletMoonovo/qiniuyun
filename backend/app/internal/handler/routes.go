@@ -22,6 +22,11 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 					Path:    "/upload/token",
 					Handler: uploadTokenHandler(serverCtx),
 				},
+				{
+					Method:  http.MethodGet,
+					Path:    "/user/tags",
+					Handler: getUserTagsHandler(serverCtx),
+				},
 			}...,
 		),
 		rest.WithPrefix("/api"),
@@ -47,6 +52,11 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 					Path:    "/character",
 					Handler: character.NewCharacterHandler(serverCtx),
 				},
+				{
+					Method:  http.MethodGet,
+					Path:    "/character",
+					Handler: character.GetCharacterHandler(serverCtx),
+				},
 			}...,
 		),
 		rest.WithPrefix("/api"),
@@ -56,11 +66,6 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		rest.WithMiddlewares(
 			[]rest.Middleware{serverCtx.Auth},
 			[]rest.Route{
-				{
-					Method:  http.MethodGet,
-					Path:    "/chat",
-					Handler: chat.ChatHandler(serverCtx),
-				},
 				{
 					Method:  http.MethodPost,
 					Path:    "/session",
@@ -73,6 +78,17 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				},
 			}...,
 		),
+		rest.WithPrefix("/api"),
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodGet,
+				Path:    "/chat/:session_id",
+				Handler: chat.ChatHandler(serverCtx),
+			},
+		},
 		rest.WithPrefix("/api"),
 	)
 

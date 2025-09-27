@@ -39,6 +39,16 @@ type (
     }
 )
 
+type (
+    getCharacterRequest {
+        pageSize int64 `form:"page_size"`
+        Tag int64 `form:"tag,optional"`
+    }
+    getCharacterResponse {
+        Characters []Character `json:"characters"`
+    }
+)
+
 @server(
     group: character
     prefix: api
@@ -48,4 +58,6 @@ type (
 service api {
     @handler newCharacter
     post /character (NewCharacterRequest) returns (NewCharacterResponse)
+    @handler getCharacter
+    get /character (getCharacterRequest) returns (getCharacterResponse)
 }

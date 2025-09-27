@@ -10,7 +10,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/pkg/errors v0.9.1
-	github.com/qdrant/go-client v1.15.2
+	github.com/qdrant/go-client v1.12.0
 	github.com/sashabaranov/go-openai v1.41.2
 	github.com/zeromicro/go-zero v1.6.1
 	golang.org/x/crypto v0.31.0

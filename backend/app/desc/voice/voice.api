@@ -4,3 +4,7 @@ info(
     title: "语音模块"
     desc: "语音模块"
 )
+
+type (
+
+)

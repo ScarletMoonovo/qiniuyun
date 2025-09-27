@@ -25,6 +25,13 @@ type (
 	}
 )
 
+var (
+	characterTagRandomSql = `SELECT character_id
+FROM character_tag
+WHERE tag_id = ?
+LIMIT 1 OFFSET FLOOR(RAND() * (SELECT COUNT(*) FROM character_tag WHERE tag_id = ?))`
+)
+
 // NewCharacterTagModel returns a model for the database table.
 func NewCharacterTagModel(conn *gorm.DB, c cache.CacheConf) CharacterTagModel {
 	return &customCharacterTagModel{
@@ -87,4 +94,29 @@ func (m *defaultCharacterTagModel) Inserts(ctx context.Context, tx *gorm.DB, dat
 		return db.Create(&data).Error
 	})
 	return err
+}
+
+func (m *defaultCharacterTagModel) GetRandom(ctx context.Context, n, tagId int64) ([]*CharacterTag, error) {
+	var resp []*CharacterTag
+	idSet := make(map[int64]struct{})
+	err := m.QueryNoCacheCtx(ctx, &resp, func(conn *gorm.DB, v interface{}) error {
+		count := int64(0)
+		for i := int64(0); count < n && i < n+3; i++ {
+			var rsp CharacterTag
+			err := conn.Raw(characterTagRandomSql, tagId).Scan(&rsp).Error
+			if err != nil {
+				return err
+			}
+			if _, exists := idSet[rsp.Id]; !exists {
+				idSet[rsp.Id] = struct{}{}
+				resp = append(resp, &rsp)
+				count++
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
