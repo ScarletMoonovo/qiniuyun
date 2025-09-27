@@ -28,29 +28,26 @@ const Login: React.FC = () => {
   const handleSubmit = async (values: API.LoginRequest) => {
     try {
       // 登录
-      const res = await login({
+      const loginRes = await login({
         email: values.email,
         password: type === 'password' ? values.password : undefined,
         captcha: type === 'captcha' ? values.captcha : undefined,
       });
-      // @ts-ignore
-      const data = res.data;
 
       const defaultLoginSuccessMessage = '登录成功！';
       message.success(defaultLoginSuccessMessage);
       
       // 存储 JWT tokens 和用户 ID
       TokenManager.setTokens(
-        data.accessToken,
-        data.refreshToken,
-        data.id
+        loginRes.accessToken,
+        loginRes.refreshToken,
+        loginRes.id
       );
 
       // 登录成功后，使用登录返回的用户 ID 获取完整的用户信息
       try {
-        const res = await getUser({ id: data.id.toString() });
-        // @ts-ignore
-        const userInfo = res.data.user;
+        const res = await getUser({ id: loginRes.id.toString() });
+        const userInfo = res.user;
         setInitialState({
           ...initialState,
           currentUser: {
@@ -66,7 +63,7 @@ const Login: React.FC = () => {
         setInitialState({
           ...initialState,
           currentUser: {
-            id: data.id.toString(),
+            id: loginRes.id,
             // 使用登录返回的基本信息
           } as API.User,
         });

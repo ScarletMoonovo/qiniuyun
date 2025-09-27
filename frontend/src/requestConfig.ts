@@ -29,8 +29,8 @@ const refreshTokenApi = async (refreshToken: string) => {
   
   const data = await response.json();
   return {
-    accessToken: data.data.accessToken,
-    refreshToken: data.data.refreshToken,
+    accessToken: data.accessToken,
+    refreshToken: data.refreshToken,
   };
 };
 
@@ -118,7 +118,7 @@ export const requestConfig: RequestConfig = {
       if (code !== 0) {
         throw new Error(data.msg ?? '服务器错误');
       }
-      return response;
+      return data;
     },
   ],
 };

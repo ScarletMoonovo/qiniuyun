@@ -149,8 +149,8 @@ const AIChat: React.FC = () => {
         character_id: parseInt(id || '4'),
       });
 
-      if (response.data.session_id) {
-        setSessionId(response.data.session_id);
+      if (response.session_id) {
+        setSessionId(response.session_id);
         
         // 添加AI的开场白
         const welcomeMessage: ShowMessage = {
