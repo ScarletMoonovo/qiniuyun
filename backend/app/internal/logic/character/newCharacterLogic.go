@@ -7,6 +7,7 @@ import (
 	"qiniuyun/backend/app/internal/svc"
 	"qiniuyun/backend/app/internal/types"
 	"qiniuyun/backend/common/ctxdata"
+	"qiniuyun/backend/common/globalkey"
 	"qiniuyun/backend/common/llm"
 	"qiniuyun/backend/model"
 )
@@ -34,6 +35,7 @@ func (l *NewCharacterLogic) NewCharacter(req *types.NewCharacterRequest) (resp *
 		Background:  req.Background,
 		OpenLine:    req.OpenLine,
 		AvatarUrl:   req.Avatar,
+		Voice:       int64(req.Voice),
 		IsPublic:    castBool(req.IsPublic),
 	}
 	err = l.svcCtx.CharacterModel.Transaction(l.ctx, func(db *gorm.DB) error {
@@ -67,6 +69,20 @@ func (l *NewCharacterLogic) NewCharacter(req *types.NewCharacterRequest) (resp *
 		err = l.svcCtx.CharacterModel.Update(context.Background(), nil, character)
 		if err != nil {
 			logx.Error(err)
+		}
+		var vectors [][]float32
+		for _, m := range memory {
+			vector, e := l.svcCtx.Embedding.GetEmbedding(m)
+			if e != nil {
+				logx.Error(e)
+				return
+			}
+			vectors = append(vectors, vector)
+		}
+		err = l.svcCtx.Embedding.InsertVectors(context.Background(), globalkey.Collection(character.Id), memory, vectors)
+		if err != nil {
+			logx.Error(err)
+			return
 		}
 	}()
 	return

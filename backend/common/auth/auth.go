@@ -118,3 +118,15 @@ func TokenMiddleware() rest.Middleware {
 		}
 	}
 }
+
+type WSAuthRequest struct {
+	Token string `json:"token"`
+}
+
+func ValidateWs(req WSAuthRequest) (int64, error) {
+	claim, err := ParseJwtToken(req.Token)
+	if err != nil {
+		return 0, err
+	}
+	return claim.Id, nil
+}

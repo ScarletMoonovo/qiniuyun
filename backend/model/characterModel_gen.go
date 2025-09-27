@@ -25,6 +25,8 @@ type (
 
 		FindOne(ctx context.Context, id int64) (*Character, error)
 		Find(ctx context.Context, cursor int64, pageSize int64) ([]*Character, error)
+		FindIn(ctx context.Context, ids []int64) ([]*Character, error)
+		GetRandom(ctx context.Context, n int64) ([]*Character, error)
 		FindByQuery(ctx context.Context, cursor int64, pageSize int64, query map[string]interface{}) ([]*Character, error)
 		FuzzyFind(ctx context.Context, cursor int64, pageSize int64, title string, keyword string) ([]*Character, error)
 
@@ -46,6 +48,7 @@ type (
 		Description   string         `gorm:"column:description"`
 		Background    string         `gorm:"column:background"`
 		OpenLine      string         `gorm:"column:open_line"`
+		Voice         int64          `gorm:"column:voice"`
 		Personality   StringArray    `gorm:"column:personality"`
 		InitialMemory StringArray    `gorm:"column:initial_memory"`
 		SystemPrompt  string         `gorm:"column:system_prompt"`
@@ -99,7 +102,7 @@ func (m *defaultCharacterModel) FindOne(ctx context.Context, id int64) (*Charact
 	roletalkCharacterIdKey := fmt.Sprintf("%s%v", cacheRoletalkCharacterIdPrefix, id)
 	var resp Character
 	err := m.QueryCtx(ctx, &resp, roletalkCharacterIdKey, func(conn *gorm.DB, v interface{}) error {
-		return conn.Model(&Character{}).Where("`id` = ?", id).First(&resp).Error
+		return conn.Model(&Character{}).Where("`id` = ?", id).Where("is_public = TRUE").First(&resp).Error
 	})
 	switch err {
 	case nil:
@@ -109,6 +112,18 @@ func (m *defaultCharacterModel) FindOne(ctx context.Context, id int64) (*Charact
 	default:
 		return nil, err
 	}
+}
+
+func (m *defaultCharacterModel) FindIn(ctx context.Context, ids []int64) ([]*Character, error) {
+	var resp []*Character
+	for _, id := range ids {
+		one, err := m.FindOne(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		resp = append(resp, one)
+	}
+	return resp, nil
 }
 
 func (m *defaultCharacterModel) Update(ctx context.Context, tx *gorm.DB, data *Character) error {

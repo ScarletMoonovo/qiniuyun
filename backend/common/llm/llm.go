@@ -100,7 +100,6 @@ const (
 
 func (c *Client) GeneratePersonality(description, background string) ([]string, error) {
 	prompt := fmt.Sprintf(personalityTpl, description, background)
-
 	var result personality
 	for i := 0; i < retryTimes; i++ {
 		raw, err := c.call(prompt)
@@ -161,7 +160,7 @@ func (c *Client) GenerateSystemPrompt(name, description string, personality []st
 func (c *Client) GetStream(history []openai.ChatCompletionMessage) (*openai.ChatCompletionStream, error) {
 	ctx := context.Background()
 	stream, err := c.client.CreateChatCompletionStream(ctx, openai.ChatCompletionRequest{
-		Model:    openai.GPT4oMini,
+		Model:    c.model,
 		Messages: history,
 		Stream:   true,
 	})

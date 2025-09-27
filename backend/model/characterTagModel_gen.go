@@ -24,6 +24,7 @@ type (
 
 		FindOne(ctx context.Context, id int64) (*CharacterTag, error)
 		Find(ctx context.Context, cursor int64, pageSize int64) ([]*CharacterTag, error)
+		GetRandom(ctx context.Context, n, tagId int64) ([]*CharacterTag, error)
 		FindByQuery(ctx context.Context, cursor int64, pageSize int64, query map[string]interface{}) ([]*CharacterTag, error)
 		FuzzyFind(ctx context.Context, cursor int64, pageSize int64, title string, keyword string) ([]*CharacterTag, error)
 

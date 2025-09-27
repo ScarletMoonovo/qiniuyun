@@ -21,7 +21,6 @@ type (
     }
 )
 
-
 @server(
     prefix: api
     middleware: Auth
@@ -30,6 +29,8 @@ type (
 service api {
     @handler uploadToken      //生成客户端上传凭证
     post /upload/token returns (UploadTokenResponse)
+    @handler getUserTags
+    get /user/tags returns ([]Tag)
 }
 
 @server(
@@ -40,3 +41,4 @@ service api {
     @handler getTags
     get /tags returns ([]Tag)
 }
+

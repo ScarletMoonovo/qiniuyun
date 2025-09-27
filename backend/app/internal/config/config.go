@@ -28,6 +28,9 @@ type Config struct {
 		Host string
 		Port int
 	}
+	Embedding struct {
+		BaseURL string
+	}
 }
 
 type EmailService struct {
