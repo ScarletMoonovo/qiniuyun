@@ -22,7 +22,16 @@ declare namespace API {
   };
 
   type chatParams = {
-    session_id: number;
+    session_id: string;
+  };
+
+  type getCharacterParams = {
+    page_size: number;
+    tag?: number;
+  };
+
+  type getCharacterResponse = {
+    characters: Character[];
   };
 
   type getSessionParams = {

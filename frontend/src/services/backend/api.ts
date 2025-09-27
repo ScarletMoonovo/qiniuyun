@@ -17,3 +17,11 @@ export async function uploadToken(options?: { [key: string]: any }) {
     ...(options || {}),
   });
 }
+
+/** 此处后端没有提供注释 GET /api/user/tags */
+export async function getUserTags(options?: { [key: string]: any }) {
+  return request<API.Tag[]>('/api/user/tags', {
+    method: 'GET',
+    ...(options || {}),
+  });
+}
