@@ -14,7 +14,7 @@ export default [
     component: './Role/Create', 
     name: '创建角色',
     hideInMenu: true,
-    // access: 'canUser'
+    access: 'canUser'
   },
   { 
     path: '/role/edit/:id', 
@@ -35,7 +35,7 @@ export default [
     component: './Role/Chat', 
     name: '与角色聊天',
     hideInMenu: true,
-    // access: 'canUser'
+    access: 'canUser'
   },
   { path: '/', redirect: '/home' },
   { path: '*', layout: false, component: './404' },

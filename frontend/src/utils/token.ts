@@ -62,7 +62,7 @@ export class TokenManager {
    */
   static getAuthorizationHeader(): string | null {
     const token = this.getAccessToken();
-    return token ? `Bearer ${token}` : null;
+    return token ? token : null;
   }
 }
 

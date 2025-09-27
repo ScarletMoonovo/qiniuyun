@@ -81,7 +81,6 @@ declare namespace API {
 
   type NewSessionRequest = {
     character_id: number;
-    title: string;
   };
 
   type NewSessionResponse = {
