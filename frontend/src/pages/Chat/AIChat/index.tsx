@@ -1,28 +1,28 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { useParams, history } from 'umi';
-import {
-  Card,
-  Input,
-  Button,
-  Avatar,
-  Space,
-  Typography,
-  Spin,
-  message,
-  Empty,
-  Tooltip,
-} from 'antd';
-import {
-  SendOutlined,
-  ArrowLeftOutlined,
-  UserOutlined,
-  RobotOutlined,
-  LoadingOutlined,
-} from '@ant-design/icons';
 import useWebSocket from '@/hooks/useWebSocket';
 import { newSession } from '@/services/backend/chat';
-import './index.less';
 import TokenManager from '@/utils/token';
+import {
+  ArrowLeftOutlined,
+  LoadingOutlined,
+  RobotOutlined,
+  SendOutlined,
+  UserOutlined,
+} from '@ant-design/icons';
+import {
+  Avatar,
+  Button,
+  Card,
+  Empty,
+  Input,
+  message,
+  Space,
+  Spin,
+  Tooltip,
+  Typography,
+} from 'antd';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { history, useLocation, useParams } from 'umi';
+import './index.less';
 
 const { TextArea } = Input;
 const { Text } = Typography;
@@ -37,53 +37,64 @@ interface ShowMessage {
 
 const AIChat: React.FC = () => {
   const params = useParams();
-  const id = params.id as string;
+  // 角色ID
+  const id = params.id;
+  // 会话ID（从查询参数中获取）
+  const location = useLocation();
+  const urlParams = new URLSearchParams(location.search);
+  const oldSessionId = urlParams.get('sessionId');
   const [messages, setMessages] = useState<ShowMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId, setSessionId] = useState<number | null>(null);
+  const [sessionId, setSessionId] = useState<number | null>(
+    oldSessionId ? parseInt(oldSessionId) : null,
+  );
   const [characterInfo, setCharacterInfo] = useState<API.Character | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<any>(null);
-  const streamingMessageRef = useRef<string | null>(null); // 跟踪当前流式消息ID
 
   // WebSocket连接URL - 这里先使用模拟的URL，实际项目中需要根据后端配置
   const wsUrl = sessionId ? `ws://192.168.196.54:10086/api/chat/${sessionId}` : null;
 
   // 2. 缓存WebSocket选项，避免重复创建
-  const webSocketOptions = useMemo(() => ({
-    onOpen: () => {
-      console.log('WebSocket连接已建立');
-      message.success('连接成功');
-      // 发送一个消息，包含access_token
-      sendMessage(JSON.stringify({
-        token: TokenManager.getAccessToken(),
-      }));
-    },
-    onClose: (event: CloseEvent) => {
-      console.log('WebSocket连接已关闭', event.code, event.reason);
-      // 只在非正常关闭时提示
-      if (event.code !== 1000) {
-        console.warn('WebSocket异常关闭:', event.code, event.reason);
-      }
-    },
-    onError: (error: Event) => {
-      console.error('WebSocket连接错误:', error);
-      
-      // 更详细的错误信息
-      const target = error.target as WebSocket;
-      console.error('连接详情:', {
-        url: target?.url,
-        readyState: target?.readyState,
-        protocol: target?.protocol
-      });
-      
-      message.error('WebSocket连接失败，请检查网络或服务器状态');
-    },
-    // 限制重连，避免无限循环
-    reconnectLimit: 3,
-    reconnectInterval: 5000,
-  }), []);
+  const webSocketOptions = useMemo(
+    () => ({
+      onOpen: () => {
+        console.log('WebSocket连接已建立');
+        message.success('连接成功');
+        // 发送一个消息，包含access_token
+        sendMessage(
+          JSON.stringify({
+            token: TokenManager.getAccessToken(),
+          }),
+        );
+      },
+      onClose: (event: CloseEvent) => {
+        console.log('WebSocket连接已关闭', event.code, event.reason);
+        // 只在非正常关闭时提示
+        if (event.code !== 1000) {
+          console.warn('WebSocket异常关闭:', event.code, event.reason);
+        }
+      },
+      onError: (error: Event) => {
+        console.error('WebSocket连接错误:', error);
+
+        // 更详细的错误信息
+        const target = error.target as WebSocket;
+        console.error('连接详情:', {
+          url: target?.url,
+          readyState: target?.readyState,
+          protocol: target?.protocol,
+        });
+
+        message.error('WebSocket连接失败，请检查网络或服务器状态');
+      },
+      // 限制重连，避免无限循环
+      reconnectLimit: 3,
+      reconnectInterval: 5000,
+    }),
+    [],
+  );
 
   const { sendMessage, readyState, lastMessage } = useWebSocket(wsUrl, webSocketOptions);
 
@@ -92,42 +103,40 @@ const AIChat: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // 处理流式消息更新的回调函数
-  const handleStreamingUpdate = useCallback((content: string) => {
-    setMessages((prev) => {
-      const lastMsg = prev[prev.length - 1];
-      
-      if (lastMsg && lastMsg.role === 'assistant' && lastMsg.status === 'streaming' && 
-          streamingMessageRef.current === lastMsg.id) {
-        // 更新最后一条流式消息
-        const updatedMessages = [...prev];
-        const lastIndex = updatedMessages.length - 1;
-        updatedMessages[lastIndex] = {
-          ...updatedMessages[lastIndex],
-          content: updatedMessages[lastIndex].content + content
-        };
-        return updatedMessages;
-      } else {
-        // 创建新的流式消息
-        const streamingMessageId = `ai-streaming-${Date.now()}-${Math.random()}`;
-        const streamingMessage: ShowMessage = {
-          id: streamingMessageId,
-          content: content,
-          role: 'assistant',
-          timestamp: Date.now(),
-          status: 'streaming',
-        };
-        streamingMessageRef.current = streamingMessageId;
-        return [...prev, streamingMessage];
-      }
-    });
-  }, []);
+  //   // 处理流式消息更新的回调函数
+  //   const handleStreamingUpdate = useCallback((content: string) => {
+  //     setMessages((prev) => {
+  //       const lastMsg = prev[prev.length - 1];
 
-  // 初始化会话
+  //       if (lastMsg && lastMsg.role === 'assistant' && lastMsg.status === 'streaming') {
+  //         // 更新流式消息内容
+  //         const updatedMessages = [...prev];
+  //         const lastIndex = updatedMessages.length - 1;
+  //         updatedMessages[lastIndex] = {
+  //           ...updatedMessages[lastIndex],
+  //           content: updatedMessages[lastIndex].content + content
+  //         };
+  //         return updatedMessages;
+  //       } else {
+  //         // 创建新的流式消息
+  //         const streamingMessageId = `ai-streaming-${Date.now()}-${Math.random()}`;
+  //         const streamingMessage: ShowMessage = {
+  //           id: streamingMessageId,
+  //           content: content,
+  //           role: 'assistant',
+  //           timestamp: Date.now(),
+  //           status: 'streaming',
+  //         };
+  //         return [...prev, streamingMessage];
+  //       }
+  //     });
+  //   }, []);
+
+  // id存在且sessionId为空时初始化会话
   const initSession = async () => {
     try {
       setIsLoading(true);
-      
+
       // 模拟角色信息（实际项目中应该从API获取）
       const mockCharacter: API.Character = {
         id: parseInt(id || '0'),
@@ -151,7 +160,7 @@ const AIChat: React.FC = () => {
 
       if (response.session_id) {
         setSessionId(response.session_id);
-        
+
         // 添加AI的开场白
         const welcomeMessage: ShowMessage = {
           id: `welcome-${Date.now()}`,
@@ -174,7 +183,7 @@ const AIChat: React.FC = () => {
   useEffect(() => {
     if (lastMessage) {
       const { type, msg, content } = lastMessage;
-      
+
       if (type === 'message' && msg) {
         // 完整消息
         const newMessage: ShowMessage = {
@@ -186,21 +195,41 @@ const AIChat: React.FC = () => {
         };
         setMessages((prev) => [...prev, newMessage]);
       } else if (type === 'delta' && content) {
-        // 流式数据 - 使用专门的回调函数处理
-        handleStreamingUpdate(content);
+        // // 流式数据 - 使用专门的回调函数处理
+        // handleStreamingUpdate(content);
+        // 流式数据 - 追加到最后一条AI消息
+        setMessages((prev) => {
+          const lastMsg = prev[prev.length - 1];
+          if (lastMsg && lastMsg.role === 'assistant' && lastMsg.status === 'streaming') {
+            // 更新最后一条流式消息
+            return prev.map((msg, index) =>
+              index === prev.length - 1 ? { ...msg, content: msg.content + content } : msg,
+            );
+          } else {
+            // 创建新的流式消息
+            const streamingMessage: ShowMessage = {
+              id: `ai-streaming-${Date.now()}`,
+              content: content,
+              role: 'assistant',
+              timestamp: Date.now(),
+              status: 'streaming',
+            };
+            return [...prev, streamingMessage];
+          }
+        });
       } else if (type === 'done') {
         // 流式数据结束，更新消息状态
-        streamingMessageRef.current = null; // 清空流式消息ID
         setMessages((prev) =>
           prev.map((msg) =>
             msg.role === 'assistant' && msg.status === 'streaming'
               ? { ...msg, status: 'sent' }
-              : msg
-          )
+              : msg,
+          ),
         );
       }
     }
-  }, [lastMessage, handleStreamingUpdate]);
+    //   }, [lastMessage, handleStreamingUpdate]);
+  }, [lastMessage]);
 
   // 发送消息
   const handleSendMessage = async () => {
@@ -222,19 +251,15 @@ const AIChat: React.FC = () => {
       // 通过WebSocket发送消息
       if (readyState === WebSocket.OPEN) {
         sendMessage(messageContent);
-        
+
         // 更新消息状态为已发送
         setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === userMessage.id ? { ...msg, status: 'sent' } : msg
-          )
+          prev.map((msg) => (msg.id === userMessage.id ? { ...msg, status: 'sent' } : msg)),
         );
       } else {
         // WebSocket未连接，模拟AI回复
         setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === userMessage.id ? { ...msg, status: 'sent' } : msg
-          )
+          prev.map((msg) => (msg.id === userMessage.id ? { ...msg, status: 'sent' } : msg)),
         );
 
         // 模拟AI回复延迟
@@ -252,9 +277,7 @@ const AIChat: React.FC = () => {
     } catch (error) {
       console.error('发送消息失败:', error);
       setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === userMessage.id ? { ...msg, status: 'failed' } : msg
-        )
+        prev.map((msg) => (msg.id === userMessage.id ? { ...msg, status: 'failed' } : msg)),
       );
       message.error('发送消息失败');
     }
@@ -275,7 +298,7 @@ const AIChat: React.FC = () => {
 
   // 初始化
   useEffect(() => {
-    if (id) {
+    if (id && !sessionId) {
       initSession();
     }
   }, [id]);
@@ -348,12 +371,8 @@ const AIChat: React.FC = () => {
               <div className="message-content">
                 <div className="message-bubble">
                   <Text className="message-text">{message.content}</Text>
-                  {message.status === 'sending' && (
-                    <LoadingOutlined className="message-status" />
-                  )}
-                  {message.status === 'streaming' && (
-                    <span className="streaming-cursor">|</span>
-                  )}
+                  {message.status === 'sending' && <LoadingOutlined className="message-status" />}
+                  {message.status === 'streaming' && <span className="streaming-cursor">|</span>}
                 </div>
                 <Text type="secondary" className="message-time">
                   {new Date(message.timestamp).toLocaleTimeString()}
