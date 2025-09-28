@@ -12,10 +12,21 @@ interface Message {
 // type为message，则会返回Msg
 // type为delta，则返回content，content代表流式数据
 // type为done代表流式数据结束
+// type为audio，则返回audio，audio代表语音数据
 interface ResponseMessage {
-  type: 'message' | 'delta' | 'done';
+  type: 'message' | 'delta' | 'done' | 'audio';
   msg?: Message;
   content?: string;
+  audio?: ArrayBuffer; // byte[]
+}
+
+// type为auth，表示需要鉴权，则需带上token
+// type为text，表示需要发送文本消息，需带上content
+// type为voice，表示需要发送语音消息转换成的文本消息，需带上content
+interface RequestMessage {
+    type: 'auth' | 'text' | 'voice';
+    token?: string;
+    content: string;
 }
 
 export interface UseWebSocketOptions {

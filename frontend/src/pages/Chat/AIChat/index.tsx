@@ -1,8 +1,12 @@
 import useWebSocket from '@/hooks/useWebSocket';
+import useAliSpeechRecognition from '@/hooks/useAliSpeechRecognition';
 import { newSession } from '@/services/backend/chat';
+import { uploadToken } from '@/services/backend/api';
 import TokenManager from '@/utils/token';
 import {
   ArrowLeftOutlined,
+  AudioOutlined,
+  AudioMutedOutlined,
   LoadingOutlined,
   RobotOutlined,
   SendOutlined,
@@ -50,6 +54,8 @@ const AIChat: React.FC = () => {
     oldSessionId ? parseInt(oldSessionId) : null,
   );
   const [characterInfo, setCharacterInfo] = useState<API.Character | null>(null);
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
+  const [voiceText, setVoiceText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<any>(null);
 
@@ -62,10 +68,12 @@ const AIChat: React.FC = () => {
       onOpen: () => {
         console.log('WebSocket连接已建立');
         message.success('连接成功');
-        // 发送一个消息，包含access_token
+        // 发送鉴权消息，按照RequestMessage格式
         sendMessage(
           JSON.stringify({
+            type: 'auth',
             token: TokenManager.getAccessToken(),
+            content: '',
           }),
         );
       },
@@ -97,6 +105,32 @@ const AIChat: React.FC = () => {
   );
 
   const { sendMessage, readyState, lastMessage } = useWebSocket(wsUrl, webSocketOptions);
+
+  // 语音识别Hook
+  const speechRecognition = useAliSpeechRecognition({
+    onTranscription: (text: string, isFinal: boolean) => {
+      if (isFinal && text.trim()) {
+        // 最终识别结果，发送消息
+        handleVoiceMessage(text.trim());
+        setVoiceText('');
+      } else {
+        // 实时识别结果，仅显示
+        setVoiceText(text);
+      }
+    },
+    onError: (error: string) => {
+      console.error('语音识别错误:', error);
+      message.error('语音识别失败: ' + error);
+    },
+    onConnected: () => {
+      message.success('语音识别连接成功');
+    },
+    onDisconnected: () => {
+      setIsVoiceMode(false);
+      setVoiceText('');
+      message.info('语音识别已断开');
+    },
+  });
 
   // 滚动到底部
   const scrollToBottom = () => {
@@ -179,10 +213,96 @@ const AIChat: React.FC = () => {
     }
   };
 
+  // 处理语音消息
+  const handleVoiceMessage = async (voiceContent: string) => {
+    if (!voiceContent.trim()) return;
+
+    const userMessage: ShowMessage = {
+      id: `voice-user-${Date.now()}`,
+      content: voiceContent.trim(),
+      role: 'user',
+      timestamp: Date.now(),
+      status: 'sending',
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+
+    try {
+      // 通过WebSocket发送语音消息，使用voice类型
+      if (readyState === WebSocket.OPEN) {
+        const voiceRequestMessage = {
+          type: 'voice',
+          content: voiceContent.trim(),
+        };
+        sendMessage(JSON.stringify(voiceRequestMessage));
+
+        // 更新消息状态为已发送
+        setMessages((prev) =>
+          prev.map((msg) => (msg.id === userMessage.id ? { ...msg, status: 'sent' } : msg)),
+        );
+      } else {
+        // WebSocket未连接，标记为失败
+        setMessages((prev) =>
+          prev.map((msg) => (msg.id === userMessage.id ? { ...msg, status: 'failed' } : msg)),
+        );
+        message.error('连接已断开，语音消息发送失败');
+      }
+    } catch (error) {
+      console.error('发送语音消息失败:', error);
+      setMessages((prev) =>
+        prev.map((msg) => (msg.id === userMessage.id ? { ...msg, status: 'failed' } : msg)),
+      );
+      message.error('发送语音消息失败');
+    }
+  };
+
+  // 切换语音模式
+  const toggleVoiceMode = async () => {
+    if (!isVoiceMode) {
+      try {
+        // 固定的阿里云语音识别AppKey
+        const appkey = 'gEoJFpChxpzCPHky';
+        
+        // 通过后端接口获取token
+        message.loading('正在获取语音识别授权...', 0);
+        const tokenResponse = await uploadToken({url: 'https://api.ai-chat.com/api/upload/token'});
+        message.destroy();
+        
+        if (!tokenResponse?.token) {
+          message.error('获取语音识别授权失败');
+          return;
+        }
+
+        speechRecognition.connect({
+          appkey,
+          token: tokenResponse.token,
+          enableIntermediate: true,
+        });
+        setIsVoiceMode(true);
+      } catch (error) {
+        message.destroy();
+        console.error('获取语音识别token失败:', error);
+        message.error('获取语音识别授权失败，请稍后重试');
+      }
+    } else {
+      speechRecognition.disconnect();
+      setIsVoiceMode(false);
+    }
+  };
+
+  // 开始/停止录音
+  const toggleRecording = () => {
+    if (speechRecognition.isRecording) {
+      speechRecognition.stopRecording();
+    } else {
+      speechRecognition.startRecording();
+    }
+  };
+
   // 处理接收到的WebSocket消息
   useEffect(() => {
     if (lastMessage) {
-      const { type, msg, content } = lastMessage;
+      const { type, msg, content, audio } = lastMessage;
 
       if (type === 'message' && msg) {
         // 完整消息
@@ -226,6 +346,23 @@ const AIChat: React.FC = () => {
               : msg,
           ),
         );
+      } else if (type === 'audio' && audio) {
+        // 处理语音数据
+        console.log('收到语音数据:', audio);
+        try {
+          // 这里可以添加播放音频的逻辑
+          // 例如：创建AudioContext，播放ArrayBuffer格式的音频数据
+          // const audioContext = new AudioContext();
+          // const audioBuffer = await audioContext.decodeAudioData(audio);
+          // const source = audioContext.createBufferSource();
+          // source.buffer = audioBuffer;
+          // source.connect(audioContext.destination);
+          // source.start();
+          
+          message.info('收到语音回复');
+        } catch (error) {
+          console.error('处理语音数据失败:', error);
+        }
       }
     }
     //   }, [lastMessage, handleStreamingUpdate]);
@@ -248,9 +385,13 @@ const AIChat: React.FC = () => {
     setInputValue('');
 
     try {
-      // 通过WebSocket发送消息
+      // 通过WebSocket发送消息，按照RequestMessage格式
       if (readyState === WebSocket.OPEN) {
-        sendMessage(messageContent);
+        const textRequestMessage = {
+          type: 'text',
+          content: messageContent,
+        };
+        sendMessage(JSON.stringify(textRequestMessage));
 
         // 更新消息状态为已发送
         setMessages((prev) =>
@@ -347,8 +488,30 @@ const AIChat: React.FC = () => {
             </Text>
             <Text type="secondary" className="connection-status">
               {readyState === WebSocket.OPEN ? '已连接' : '未连接'}
+              {speechRecognition.isConnected && ' • 语音已连接'}
             </Text>
           </div>
+        </div>
+        <div className="header-actions">
+          <Tooltip title={isVoiceMode ? '关闭语音模式' : '开启语音聊天'}>
+            <Button
+              type={isVoiceMode ? 'primary' : 'default'}
+              icon={isVoiceMode ? <AudioOutlined /> : <AudioMutedOutlined />}
+              onClick={toggleVoiceMode}
+              className="voice-button"
+              loading={isVoiceMode && !speechRecognition.isConnected}
+            />
+          </Tooltip>
+          {isVoiceMode && speechRecognition.isConnected && (
+            <Tooltip title={speechRecognition.isRecording ? '停止录音' : '开始录音'}>
+              <Button
+                type={speechRecognition.isRecording ? 'primary' : 'default'}
+                icon={<AudioOutlined />}
+                onClick={toggleRecording}
+                className={speechRecognition.isRecording ? 'recording-button' : ''}
+              />
+            </Tooltip>
+          )}
         </div>
       </div>
 
@@ -386,6 +549,22 @@ const AIChat: React.FC = () => {
 
       {/* 输入区域 */}
       <div className="ai-chat-input">
+        {/* 语音状态显示 */}
+        {isVoiceMode && speechRecognition.isConnected && (
+          <Card className="voice-status-card" style={{ marginBottom: 12 }}>
+            <Space align="center">
+              <AudioOutlined className={speechRecognition.isRecording ? 'recording' : ''} />
+              <Text>
+                {speechRecognition.isRecording 
+                  ? (voiceText || speechRecognition.currentText || '正在听取中...') 
+                  : '点击录音按钮开始语音聊天'
+                }
+              </Text>
+              {speechRecognition.isRecording && <span className="recording-indicator">●</span>}
+            </Space>
+          </Card>
+        )}
+        
         <Card className="input-card">
           <Space.Compact style={{ display: 'flex', width: '100%' }}>
             <TextArea
@@ -393,16 +572,17 @@ const AIChat: React.FC = () => {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="输入消息... (Enter发送，Shift+Enter换行)"
+              placeholder={isVoiceMode ? "语音模式已开启，可直接说话或输入文字..." : "输入消息... (Enter发送，Shift+Enter换行)"}
               autoSize={{ minRows: 1, maxRows: 4 }}
               className="message-input"
+              disabled={speechRecognition.isRecording}
             />
             <Tooltip title="发送消息">
               <Button
                 type="primary"
                 icon={<SendOutlined />}
                 onClick={handleSendMessage}
-                disabled={!inputValue.trim()}
+                disabled={!inputValue.trim() || speechRecognition.isRecording}
                 className="send-button"
               />
             </Tooltip>
