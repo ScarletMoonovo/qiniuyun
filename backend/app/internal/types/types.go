@@ -19,6 +19,7 @@ type Character struct {
 	Tags        []string `json:"tags"`
 	IsPublic    bool     `json:"is_public"`
 	UserId      int64    `json:"user_id"`
+	UserName    string   `json:"user_name"`
 	CreatedAt   int64    `json:"created_at"`
 	UpdatedAt   int64    `json:"updated_at"`
 }

@@ -31,7 +31,7 @@ func (l *GetCharacterLogic) GetCharacter(req *types.GetCharacterRequest) (resp *
 			return nil, err
 		}
 		return &types.GetCharacterResponse{
-			Characters: castCharacters(characters),
+			Characters: l.castCharacters(characters),
 		}, nil
 	}
 	if req.Tag == 0 {
@@ -40,7 +40,7 @@ func (l *GetCharacterLogic) GetCharacter(req *types.GetCharacterRequest) (resp *
 			return nil, err
 		}
 		return &types.GetCharacterResponse{
-			Characters: castCharacters(characters),
+			Characters: l.castCharacters(characters),
 		}, nil
 	}
 	characterIds := make([]int64, 0)
@@ -56,14 +56,17 @@ func (l *GetCharacterLogic) GetCharacter(req *types.GetCharacterRequest) (resp *
 		return nil, err
 	}
 	return &types.GetCharacterResponse{
-		Characters: castCharacters(characters),
+		Characters: l.castCharacters(characters),
 	}, nil
 }
 
-func castCharacters(characters []*model.Character) (resp []types.Character) {
+func (l *GetCharacterLogic) castCharacters(characters []*model.Character) (resp []types.Character) {
 	resp = make([]types.Character, 0)
 	for _, character := range characters {
-		resp = append(resp, castCharacter(character))
+		one, _ := l.svcCtx.UserModel.FindOne(l.ctx, character.UserId)
+		c := castCharacter(character)
+		c.UserName = one.Name
+		resp = append(resp, c)
 	}
 	return resp
 }
