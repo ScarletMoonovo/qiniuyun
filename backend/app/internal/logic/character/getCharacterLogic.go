@@ -64,8 +64,13 @@ func (l *GetCharacterLogic) castCharacters(characters []*model.Character) (resp 
 	resp = make([]types.Character, 0)
 	for _, character := range characters {
 		one, _ := l.svcCtx.UserModel.FindOne(l.ctx, character.UserId)
+		tags, _ := l.svcCtx.CharacterTagModel.FindByQuery(l.ctx, 0, 3, map[string]interface{}{"character_id": character.Id})
 		c := castCharacter(character)
 		c.UserName = one.Name
+		for _, tag := range tags {
+			tagName, _ := l.svcCtx.TagModel.FindOne(l.ctx, tag.TagId)
+			c.Tags = append(c.Tags, tagName.Name)
+		}
 		resp = append(resp, c)
 	}
 	return resp
