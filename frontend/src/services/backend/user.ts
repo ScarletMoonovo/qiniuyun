@@ -27,13 +27,9 @@ export async function login(body: API.LoginRequest, options?: { [key: string]: a
 }
 
 /** 此处后端没有提供注释 POST /api/refresh */
-export async function refreshToken(refreshTokenValue: string, options?: { [key: string]: any }) {
+export async function refreshToken(options?: { [key: string]: any }) {
   return request<API.RefreshResponse>('/api/refresh', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': refreshTokenValue,
-    },
     ...(options || {}),
   });
 }

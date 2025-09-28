@@ -69,7 +69,7 @@ export const layout: RunTimeLayoutConfig = ({ initialState }) => {
       },
     },
     waterMarkProps: {
-      content: initialState?.currentUser?.name,
+      content: '',
     },
     footerRender: () => <Footer />,
     menuHeaderRender: undefined,

@@ -3,19 +3,12 @@
 // API 更新时间：
 // API 唯一标识：
 import * as api from './api';
-import * as user from './user';
-import * as role from './role';
+import * as character from './character';
 import * as chat from './chat';
-
+import * as user from './user';
 export default {
-  api,
   user,
-  role,
+  character,
   chat,
+  api,
 };
-
-// 也导出具名导出以便直接使用
-export * from './api';
-export * from './user';
-export * from './role';
-export * from './chat';

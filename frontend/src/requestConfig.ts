@@ -77,7 +77,7 @@ export const requestConfig: RequestConfig = {
         throw new Error('服务异常');
       }
 
-      // 错误码处理
+      // 错误码处理 - 直接从响应数据中获取
       const code: number = data.code;
       
       // Token 过期或无效 (根据后端约定的错误码)
@@ -85,6 +85,17 @@ export const requestConfig: RequestConfig = {
         // 如果不是登录相关接口，尝试刷新 token
         const skipAuthPaths = ['/api/login', '/api/register', '/api/captcha', '/api/refresh'];
         const isAuthPath = skipAuthPaths.some(path => requestPath.includes(path));
+        
+        // 如果是refresh接口本身返回401，说明refreshToken也过期了，直接跳转登录页
+        if (requestPath.includes('/api/refresh')) {
+          console.log('Refresh token API returned 401, refreshToken expired');
+          TokenManager.clearTokens();
+          const currentUrl = window.location.href;
+          const loginUrl = `/user/login?redirect=${encodeURIComponent(currentUrl)}`;
+          console.log('Redirecting to:', loginUrl);
+          window.location.href = loginUrl;
+          throw new Error('请先登录');
+        }
         
         if (!isAuthPath && !location.pathname.includes('/user/login')) {
           try {
@@ -118,7 +129,9 @@ export const requestConfig: RequestConfig = {
       if (code !== 0) {
         throw new Error(data.msg ?? '服务器错误');
       }
-      return response;
+      
+      // 返回处理后的数据
+      return data;
     },
   ],
 };

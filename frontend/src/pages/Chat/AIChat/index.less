@@ -1,0 +1,361 @@
+.ai-chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #f5f5f5;
+  overflow: hidden;
+
+  .ai-chat-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    background: #ffffff;
+    border-bottom: 1px solid #e8e8e8;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    z-index: 10;
+
+    .back-button {
+      margin-right: 12px;
+      color: #666;
+      
+      &:hover {
+        color: #1890ff;
+      }
+    }
+
+    .character-info {
+      display: flex;
+      align-items: center;
+      flex: 1;
+
+      .character-avatar {
+        margin-right: 12px;
+      }
+
+      .character-details {
+        display: flex;
+        flex-direction: column;
+
+        .character-name {
+          font-size: 16px;
+          line-height: 1.2;
+        }
+
+        .connection-status {
+          font-size: 12px;
+          line-height: 1.2;
+        }
+      }
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .voice-button {
+        position: relative;
+        
+        &.ant-btn-primary {
+          animation: pulse 2s infinite;
+        }
+      }
+
+      .recording-button {
+        animation: pulse 1s infinite;
+        background: #ff4d4f !important;
+        border-color: #ff4d4f !important;
+      }
+    }
+  }
+
+  .ai-chat-messages {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    .message-item {
+      display: flex;
+      gap: 12px;
+      max-width: 80%;
+
+      &.user-message {
+        flex-direction: row-reverse;
+        align-self: flex-end;
+
+        .message-content {
+          align-items: flex-end;
+          
+          .message-bubble {
+            background: #1890ff;
+            color: white;
+          }
+        }
+      }
+
+      &.ai-message {
+        align-self: flex-start;
+
+        .message-bubble {
+          background: white;
+          color: #333;
+          border: 1px solid #e8e8e8;
+        }
+      }
+
+      .message-avatar {
+        flex-shrink: 0;
+        align-self: flex-end;
+      }
+
+      .message-content {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        .message-bubble {
+          padding: 12px 16px;
+          border-radius: 20px;
+          position: relative;
+          word-wrap: break-word;
+          max-width: 100%;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
+          .message-text {
+            color: inherit;
+            white-space: pre-wrap;
+          }
+
+          .message-status {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+          }
+
+          .streaming-cursor {
+            color: #1890ff;
+            font-weight: bold;
+            animation: blink 1s infinite;
+          }
+        }
+
+        .message-time {
+          font-size: 12px;
+          padding: 0 8px;
+        }
+      }
+    }
+
+    /* 自定义滚动条 */
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #d9d9d9;
+      border-radius: 3px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: #bfbfbf;
+    }
+  }
+
+  .ai-chat-input {
+    padding: 16px;
+    background: #ffffff;
+    border-top: 1px solid #e8e8e8;
+
+    .voice-status-card {
+      border: 1px solid #1890ff;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #e6f7ff 0%, #f0f9ff 100%);
+      
+      .ant-card-body {
+        padding: 12px 16px;
+      }
+
+      .anticon {
+        animation: voicePulse 1.5s ease-in-out infinite;
+        
+        &.recording {
+          color: #ff4d4f;
+          animation: recordingPulse 0.8s ease-in-out infinite;
+        }
+      }
+
+      .recording-indicator {
+        color: #ff4d4f;
+        font-size: 20px;
+        animation: blink 1s infinite;
+      }
+    }
+
+    .input-card {
+      border: none;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      border-radius: 16px;
+
+      .ant-card-body {
+        padding: 12px;
+      }
+
+      .message-input {
+        border: none;
+        box-shadow: none;
+        resize: none;
+
+        &:focus {
+          border: none;
+          box-shadow: none;
+        }
+
+        &:disabled {
+          background-color: #f5f5f5;
+          color: #bfbfbf;
+        }
+      }
+
+      .send-button {
+        height: auto;
+        min-height: 32px;
+        border-radius: 12px;
+        margin-left: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+  }
+
+  .ai-chat-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background: #f5f5f5;
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .ai-chat-container {
+    .ai-chat-messages {
+      padding: 12px;
+
+      .message-item {
+        max-width: 90%;
+        
+        .message-content .message-bubble {
+          padding: 10px 14px;
+          border-radius: 18px;
+        }
+      }
+    }
+
+    .ai-chat-input {
+      padding: 12px;
+    }
+
+    .ai-chat-header {
+      padding: 8px 12px;
+      
+      .character-details .character-name {
+        font-size: 14px;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .ai-chat-container {
+    .ai-chat-messages {
+      padding: 8px;
+      gap: 12px;
+
+      .message-item {
+        max-width: 95%;
+        gap: 8px;
+
+        .message-avatar {
+          width: 32px;
+          height: 32px;
+          font-size: 14px;
+        }
+
+        .message-content .message-bubble {
+          padding: 8px 12px;
+          border-radius: 16px;
+        }
+      }
+    }
+
+    .ai-chat-input {
+      padding: 8px;
+    }
+  }
+}
+
+/* 流式消息光标闪烁动画 */
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
+/* 语音按钮脉冲动画 */
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(24, 144, 255, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(24, 144, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(24, 144, 255, 0);
+  }
+}
+
+/* 语音图标脉冲动画 */
+@keyframes voicePulse {
+  0% {
+    transform: scale(1);
+    color: #1890ff;
+  }
+  50% {
+    transform: scale(1.1);
+    color: #40a9ff;
+  }
+  100% {
+    transform: scale(1);
+    color: #1890ff;
+  }
+}
+
+/* 录音状态脉冲动画 */
+@keyframes recordingPulse {
+  0% {
+    transform: scale(1);
+    color: #ff4d4f;
+  }
+  50% {
+    transform: scale(1.2);
+    color: #ff7875;
+  }
+  100% {
+    transform: scale(1);
+    color: #ff4d4f;
+  }
+}

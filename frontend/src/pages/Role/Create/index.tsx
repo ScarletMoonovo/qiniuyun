@@ -1,6 +1,7 @@
 import { newCharacter } from '@/services/backend/character';
 import { getTags } from '@/services/backend/api';
-import { PlusOutlined } from '@ant-design/icons';
+import { getVoiceModelOptions, getVoiceModelByType } from '@/constants/voiceModels';
+import { PlusOutlined, SoundOutlined } from '@ant-design/icons';
 import {
   PageContainer,
   ProForm,
@@ -9,7 +10,7 @@ import {
   ProFormTextArea,
 } from '@ant-design/pro-components';
 import type { UploadProps } from 'antd';
-import { Avatar, Button, Card, Col, message, Row, Space, Spin, Upload } from 'antd';
+import { Avatar, Button, Card, Col, message, Row, Space, Spin, Upload, Tooltip } from 'antd';
 import { useEffect, useState } from 'react';
 import { history } from 'umi';
 
@@ -17,33 +18,29 @@ import { history } from 'umi';
 type VoiceModelOption = {
   label: string;
   value: string;
-  description: string;
+  category: string;
+  voice_type: string;
+  url: string;
 };
 
 const RoleCreate: React.FC = () => {
   const [form] = ProForm.useForm();
   const [availableTags, setAvailableTags] = useState<API.Tag[]>([]);
   const [avatar, setAvatar] = useState<string>('');
-  const [voiceModels, setVoiceModels] = useState<VoiceModelOption[]>([]);
+  const [voiceModels, setVoiceModels] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [voiceModelsLoading, setVoiceModelsLoading] = useState(true);
+  const [voiceModelsLoading, setVoiceModelsLoading] = useState(false);
   const [tagsLoading, setTagsLoading] = useState(true);
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
 
   // 获取声音模型列表和标签列表
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 获取声音模型
+        // 获取声音模型 - 使用本地数据
         setVoiceModelsLoading(true);
-        const voiceResponse = await getVoiceModels();
-        if (voiceResponse?.models) {
-          const modelOptions: VoiceModelOption[] = voiceResponse.models.map((model: API.VoiceModel) => ({
-            label: model.name,
-            value: model.id,
-            description: model.description,
-          }));
-          setVoiceModels(modelOptions);
-        }
+        const voiceOptions = getVoiceModelOptions();
+        setVoiceModels(voiceOptions);
 
         // 获取标签列表
         setTagsLoading(true);
@@ -63,8 +60,42 @@ const RoleCreate: React.FC = () => {
     fetchData();
   }, []);
 
+  // 清理音频资源
+  useEffect(() => {
+    return () => {
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+      }
+    };
+  }, [currentAudio]);
+
   const handleBack = () => {
-    history.back();
+    window.history.back();
+  };
+
+  // 播放语音预览
+  const playVoicePreview = (url: string) => {
+    // 停止当前播放的音频
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+    }
+
+    // 创建新的音频实例
+    const audio = new Audio(url);
+    setCurrentAudio(audio);
+
+    // 播放音频
+    audio.play().catch((error) => {
+      console.error('播放音频失败:', error);
+      message.error('播放语音预览失败');
+    });
+
+    // 播放结束后清理
+    audio.onended = () => {
+      setCurrentAudio(null);
+    };
   };
 
 
@@ -80,7 +111,7 @@ const RoleCreate: React.FC = () => {
         avatar: avatar || '',
         description: values.description,
         open_line: values.openLine,
-        voice: values.voice,
+        voice: values.voice || '', // voice现在是voice_type字符串
         tags: values.tags || [],
         is_public: values.isPublic
       };
@@ -237,16 +268,31 @@ const RoleCreate: React.FC = () => {
                   label="声音模型"
                   placeholder={voiceModelsLoading ? '加载中...' : '请选择声音模型'}
                   options={voiceModels}
-                  rules={[{ required: true, message: '请选择声音模型' }]}
+                  rules={[{ required: false, message: '请选择声音模型' }]}
                   fieldProps={{
                     loading: voiceModelsLoading,
                     disabled: voiceModelsLoading,
                     optionRender: (option) => (
-                      <div>
-                        <div style={{ fontWeight: 500 }}>{option.label}</div>
-                        <div style={{ fontSize: '12px', color: '#666' }}>
-                          {option.data?.description || ''}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ fontWeight: 500 }}>{option.label}</div>
+                          <div style={{ fontSize: '12px', color: '#666' }}>
+                            {option.data?.category || ''}
+                          </div>
                         </div>
+                        {option.data?.url && (
+                          <Tooltip title="试听语音">
+                            <Button
+                              type="text"
+                              size="small"
+                              icon={<SoundOutlined />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                playVoicePreview(option.data.url);
+                              }}
+                            />
+                          </Tooltip>
+                        )}
                       </div>
                     ),
                   }}

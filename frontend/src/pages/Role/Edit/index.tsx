@@ -1,10 +1,29 @@
-import { PageContainer, ProForm, ProFormText, ProFormTextArea, ProFormSelect } from '@ant-design/pro-components';
-import { Card, Row, Col, Button, Space, message, Upload, Avatar, Tag, Input, Spin, Alert } from 'antd';
-import { PlusOutlined, UserOutlined, ArrowLeftOutlined } from '@ant-design/icons';
-import { history, useParams } from 'umi';
-import { useState, useRef, useEffect } from 'react';
+import { PlusOutlined } from '@ant-design/icons';
+import {
+  PageContainer,
+  ProForm,
+  ProFormSelect,
+  ProFormText,
+  ProFormTextArea,
+} from '@ant-design/pro-components';
 import type { UploadProps } from 'antd';
-import { getRoleDetail, updateRole, getVoiceModels } from '@/services/backend/role';
+import {
+  Alert,
+  Avatar,
+  Button,
+  Card,
+  Col,
+  Input,
+  message,
+  Row,
+  Space,
+  Spin,
+  Tag,
+  Upload,
+} from 'antd';
+import { useEffect, useRef, useState } from 'react';
+import { history, useParams } from 'umi';
+// import { getRoleDetail, getVoiceModels, updateRole } from '@/services/backend/character';
 
 // 声音模型选项类型
 type VoiceModelOption = {
@@ -35,7 +54,7 @@ const RoleEdit: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [voiceModelsLoading, setVoiceModelsLoading] = useState(true);
-  const [roleData, setRoleData] = useState<API.Role | null>(null);
+  const [roleData, setRoleData] = useState<API.Character | null>(null);
   const [error, setError] = useState<string>('');
   const inputRef = useRef<any>(null);
 
@@ -50,26 +69,56 @@ const RoleEdit: React.FC = () => {
 
       try {
         setPageLoading(true);
-        const response = await getRoleDetail({ id: parseInt(id) });
-        if (response?.role) {
-          const role = response.role;
-          setRoleData(role);
-          setTags(role.tags || []);
-          setAvatar(role.avatar || '');
-          
-          // 设置表单初始值
-          form.setFieldsValue({
-            name: role.name,
-            description: role.description,
-            category: role.category,
-            personality: role.personality,
-            background: role.background,
-            voiceStyle: role.voiceStyle,
-            quotes: role.quotes?.join('\n') || '',
-          });
-        } else {
-          setError('角色不存在');
-        }
+        // TODO: 实现获取角色详情接口
+        // const response = await getRoleDetail({ id: parseInt(id) });
+        // if (response?.role) {
+        //   const role = response.role;
+        //   setRoleData(role);
+        //   setTags(role.tags || []);
+        //   setAvatar(role.avatar || '');
+        //
+        //   // 设置表单初始值
+        //   form.setFieldsValue({
+        //     name: role.name,
+        //     description: role.description,
+        //     category: role.category,
+        //     personality: role.personality,
+        //     background: role.background,
+        //     voiceStyle: role.voiceStyle,
+        //     quotes: role.quotes?.join('\n') || '',
+        //   });
+        // } else {
+        //   setError('角色不存在');
+        // }
+
+        // 临时模拟数据
+        const mockRole: API.Character = {
+          id: parseInt(id),
+          name: '示例角色',
+          avatar: '',
+          description: '这是一个示例角色的描述',
+          background: '这是角色的背景故事',
+          open_line: '你好，我是示例角色',
+          tags: ['友善', '智能'],
+          is_public: true,
+          user_id: 1,
+          created_at: Date.now(),
+          updated_at: Date.now(),
+        };
+        setRoleData(mockRole);
+        setTags(mockRole.tags || []);
+        setAvatar(mockRole.avatar || '');
+
+        // 设置表单初始值
+        form.setFieldsValue({
+          name: mockRole.name,
+          description: mockRole.description,
+          category: 'assistant', // 默认分类
+          personality: '友善、智能、乐于助人', // 默认性格
+          background: mockRole.background,
+          voiceStyle: 'default', // 默认声音
+          quotes: mockRole.open_line || '',
+        });
       } catch (error: any) {
         console.error('获取角色详情失败:', error);
         setError(error?.message || '获取角色详情失败');
@@ -86,15 +135,25 @@ const RoleEdit: React.FC = () => {
     const fetchVoiceModels = async () => {
       try {
         setVoiceModelsLoading(true);
-        const response = await getVoiceModels();
-        if (response.models) {
-          const modelOptions: VoiceModelOption[] = response.models.map((model: API.VoiceModel) => ({
-            label: model.name,
-            value: model.id,
-            description: model.description,
-          }));
-          setVoiceModels(modelOptions);
-        }
+        // TODO: 实现获取声音模型接口
+        // const response = await getVoiceModels();
+        // if (response.models) {
+        //   const modelOptions: VoiceModelOption[] = response.models.map((model: API.VoiceModel) => ({
+        //     label: model.name,
+        //     value: model.id,
+        //     description: model.description,
+        //   }));
+        //   setVoiceModels(modelOptions);
+        // }
+
+        // 临时模拟数据
+        const mockVoiceModels: VoiceModelOption[] = [
+          { label: '默认声音', value: 'default', description: '标准的AI语音模型' },
+          { label: '温柔女声', value: 'gentle_female', description: '温柔亲切的女性声音' },
+          { label: '磁性男声', value: 'magnetic_male', description: '低沉磁性的男性声音' },
+          { label: '活泼童声', value: 'lively_child', description: '活泼可爱的儿童声音' },
+        ];
+        setVoiceModels(mockVoiceModels);
       } catch (error) {
         console.error('获取声音模型失败:', error);
         message.error('获取声音模型失败，请刷新重试');
@@ -118,7 +177,7 @@ const RoleEdit: React.FC = () => {
   };
 
   const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
+    setTags(tags.filter((tag) => tag !== tagToRemove));
   };
 
   const handleSubmit = async (values: any) => {
@@ -129,9 +188,9 @@ const RoleEdit: React.FC = () => {
 
     try {
       setLoading(true);
-      
+
       // 构建角色更新请求数据
-      const updateData: API.UpdateRoleRequest = {
+      const updateData = {
         id: roleData.id,
         name: values.name,
         description: values.description,
@@ -143,17 +202,21 @@ const RoleEdit: React.FC = () => {
         tags,
         avatar: avatar || undefined,
       };
-      
+
       console.log('更新角色数据:', updateData);
-      
-      // 调用API更新角色
-      const response = await updateRole(roleData.id, updateData);
-      
-      if (response) {
-        message.success('角色更新成功！');
-        // 跳转到角色详情页
-        history.push(`/role/detail/${roleData.id}`);
-      }
+
+      // TODO: 实现更新角色接口
+      // const response = await updateRole(roleData.id, updateData);
+      // if (response) {
+      //   message.success('角色更新成功！');
+      //   // 跳转到角色详情页
+      //   history.push(`/role/detail/${roleData.id}`);
+      // }
+
+      // 临时模拟成功
+      message.success('角色更新成功！');
+      // 跳转到角色详情页
+      history.push(`/role/detail/${roleData.id}`);
     } catch (error: any) {
       console.error('更新角色失败:', error);
       const errorMessage = error?.message || '更新角色失败，请重试';
@@ -179,14 +242,14 @@ const RoleEdit: React.FC = () => {
         message.error('图片大小不能超过 2MB!');
         return false;
       }
-      
+
       // 创建预览URL
       const reader = new FileReader();
       reader.onload = (e) => {
         setAvatar(e.target?.result as string);
       };
       reader.readAsDataURL(file);
-      
+
       return false; // 阻止自动上传
     },
   };
@@ -261,187 +324,181 @@ const RoleEdit: React.FC = () => {
         <Col xs={24} sm={20} md={16} lg={12} xl={10}>
           <Card>
             <Spin spinning={voiceModelsLoading && voiceModels.length === 0} tip="加载声音模型中...">
-            <ProForm
-              form={form}
-              layout="vertical"
-              onFinish={handleSubmit}
-              submitter={{
-                searchConfig: {
-                  submitText: '保存修改',
-                },
-                render: (_, dom) => (
-                  <div style={{ textAlign: 'center', marginTop: 32 }}>
-                    <Space size="large">
-                      <Button onClick={handleBack} disabled={loading}>
-                        取消
-                      </Button>
-                      <Button 
-                        type="primary" 
-                        loading={loading}
-                        onClick={() => form.submit()}
-                      >
-                        保存修改
-                      </Button>
-                    </Space>
-                  </div>
-                ),
-              }}
-            >
-              {/* 角色头像 */}
-              <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                <div style={{ marginBottom: 8 }}>角色头像</div>
-                <Upload {...uploadProps}>
-                  {avatar ? (
-                    <Avatar size={80} src={avatar} />
-                  ) : (
-                    <div style={{
-                      width: 80,
-                      height: 80,
-                      border: '1px dashed #d9d9d9',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                    }}>
-                      <div style={{ textAlign: 'center', color: '#999' }}>
-                        <PlusOutlined style={{ fontSize: 16, marginBottom: 4 }} />
-                        <div style={{ fontSize: 12 }}>上传头像</div>
-                      </div>
-                    </div>
-                  )}
-                </Upload>
-              </div>
-
-              {/* 基本信息 */}
-              <ProFormText
-                name="name"
-                label="角色姓名"
-                placeholder="请输入角色姓名"
-                rules={[
-                  { required: true, message: '请输入角色姓名' },
-                  { max: 20, message: '角色姓名不能超过20个字符' },
-                ]}
-              />
-
-              <ProFormTextArea
-                name="description"
-                label="角色介绍"
-                placeholder="请简单介绍一下这个角色..."
-                rules={[
-                  { required: true, message: '请输入角色介绍' },
-                  { max: 200, message: '角色介绍不能超过200个字符' },
-                ]}
-                fieldProps={{
-                  rows: 3,
-                  showCount: true,
-                  maxLength: 200,
-                }}
-              />
-
-              <ProFormSelect
-                name="category"
-                label="角色分类"
-                placeholder="请选择角色分类"
-                options={roleCategories}
-                rules={[{ required: true, message: '请选择角色分类' }]}
-              />
-
-              {/* 标签管理 */}
-              <div style={{ marginBottom: 24 }}>
-                <div style={{ marginBottom: 8, fontSize: 14, fontWeight: 500 }}>
-                  角色标签 <span style={{ color: '#999', fontSize: 12 }}>(最多5个)</span>
-                </div>
-                <Space wrap style={{ marginBottom: 8 }}>
-                  {tags.map((tag) => (
-                    <Tag
-                      key={tag}
-                      closable
-                      onClose={() => handleRemoveTag(tag)}
-                    >
-                      {tag}
-                    </Tag>
-                  ))}
-                </Space>
-                {tags.length < 5 && (
-                  <Space.Compact style={{ width: '100%' }}>
-                    <Input
-                      ref={inputRef}
-                      value={inputValue}
-                      onChange={(e) => setInputValue(e.target.value)}
-                      onPressEnter={handleAddTag}
-                      placeholder="输入标签并按回车添加"
-                      maxLength={10}
-                    />
-                    <Button onClick={handleAddTag} disabled={!inputValue.trim()}>
-                      添加
-                    </Button>
-                  </Space.Compact>
-                )}
-              </div>
-
-              <ProFormTextArea
-                name="personality"
-                label="性格特征"
-                placeholder="描述角色的性格特点，如温柔、幽默、严谨等..."
-                rules={[
-                  { required: true, message: '请描述角色的性格特征' },
-                  { max: 300, message: '性格特征不能超过300个字符' },
-                ]}
-                fieldProps={{
-                  rows: 3,
-                  showCount: true,
-                  maxLength: 300,
-                }}
-              />
-
-              <ProFormTextArea
-                name="background"
-                label="角色背景"
-                placeholder="描述角色的背景故事，如职业、经历、专业领域等..."
-                rules={[
-                  { required: true, message: '请描述角色的背景故事' },
-                  { max: 500, message: '角色背景不能超过500个字符' },
-                ]}
-                fieldProps={{
-                  rows: 4,
-                  showCount: true,
-                  maxLength: 500,
-                }}
-              />
-
-              <ProFormSelect
-                name="voiceStyle"
-                label="声音模型"
-                placeholder={voiceModelsLoading ? "加载中..." : "请选择声音模型"}
-                options={voiceModels}
-                rules={[{ required: true, message: '请选择声音模型' }]}
-                fieldProps={{
-                  loading: voiceModelsLoading,
-                  disabled: voiceModelsLoading,
-                  optionRender: (option) => (
-                    <div>
-                      <div style={{ fontWeight: 500 }}>{option.label}</div>
-                      <div style={{ fontSize: '12px', color: '#666' }}>
-                        {option.data?.description || ''}
-                      </div>
+              <ProForm
+                form={form}
+                layout="vertical"
+                onFinish={handleSubmit}
+                submitter={{
+                  searchConfig: {
+                    submitText: '保存修改',
+                  },
+                  render: () => (
+                    <div style={{ textAlign: 'center', marginTop: 32 }}>
+                      <Space size="large">
+                        <Button onClick={handleBack} disabled={loading}>
+                          取消
+                        </Button>
+                        <Button type="primary" loading={loading} onClick={() => form.submit()}>
+                          保存修改
+                        </Button>
+                      </Space>
                     </div>
                   ),
                 }}
-              />
+              >
+                {/* 角色头像 */}
+                <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                  <div style={{ marginBottom: 8 }}>角色头像</div>
+                  <Upload {...uploadProps}>
+                    {avatar ? (
+                      <Avatar size={80} src={avatar} />
+                    ) : (
+                      <div
+                        style={{
+                          width: 80,
+                          height: 80,
+                          border: '1px dashed #d9d9d9',
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <div style={{ textAlign: 'center', color: '#999' }}>
+                          <PlusOutlined style={{ fontSize: 16, marginBottom: 4 }} />
+                          <div style={{ fontSize: 12 }}>上传头像</div>
+                        </div>
+                      </div>
+                    )}
+                  </Upload>
+                </div>
 
-              <ProFormTextArea
-                name="quotes"
-                label="开场白"
-                placeholder="设置角色的开场白，多个开场白请用换行分隔..."
-                tooltip="角色在开始对话时可能会说的话，可以设置多个，系统会随机选择"
-                fieldProps={{
-                  rows: 3,
-                  showCount: true,
-                  maxLength: 300,
-                }}
-              />
-            </ProForm>
+                {/* 基本信息 */}
+                <ProFormText
+                  name="name"
+                  label="角色姓名"
+                  placeholder="请输入角色姓名"
+                  rules={[
+                    { required: true, message: '请输入角色姓名' },
+                    { max: 20, message: '角色姓名不能超过20个字符' },
+                  ]}
+                />
+
+                <ProFormTextArea
+                  name="description"
+                  label="角色介绍"
+                  placeholder="请简单介绍一下这个角色..."
+                  rules={[
+                    { required: true, message: '请输入角色介绍' },
+                    { max: 200, message: '角色介绍不能超过200个字符' },
+                  ]}
+                  fieldProps={{
+                    rows: 3,
+                    showCount: true,
+                    maxLength: 200,
+                  }}
+                />
+
+                <ProFormSelect
+                  name="category"
+                  label="角色分类"
+                  placeholder="请选择角色分类"
+                  options={roleCategories}
+                  rules={[{ required: true, message: '请选择角色分类' }]}
+                />
+
+                {/* 标签管理 */}
+                <div style={{ marginBottom: 24 }}>
+                  <div style={{ marginBottom: 8, fontSize: 14, fontWeight: 500 }}>
+                    角色标签 <span style={{ color: '#999', fontSize: 12 }}>(最多5个)</span>
+                  </div>
+                  <Space wrap style={{ marginBottom: 8 }}>
+                    {tags.map((tag) => (
+                      <Tag key={tag} closable onClose={() => handleRemoveTag(tag)}>
+                        {tag}
+                      </Tag>
+                    ))}
+                  </Space>
+                  {tags.length < 5 && (
+                    <Space.Compact style={{ width: '100%' }}>
+                      <Input
+                        ref={inputRef}
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        onPressEnter={handleAddTag}
+                        placeholder="输入标签并按回车添加"
+                        maxLength={10}
+                      />
+                      <Button onClick={handleAddTag} disabled={!inputValue.trim()}>
+                        添加
+                      </Button>
+                    </Space.Compact>
+                  )}
+                </div>
+
+                <ProFormTextArea
+                  name="personality"
+                  label="性格特征"
+                  placeholder="描述角色的性格特点，如温柔、幽默、严谨等..."
+                  rules={[
+                    { required: true, message: '请描述角色的性格特征' },
+                    { max: 300, message: '性格特征不能超过300个字符' },
+                  ]}
+                  fieldProps={{
+                    rows: 3,
+                    showCount: true,
+                    maxLength: 300,
+                  }}
+                />
+
+                <ProFormTextArea
+                  name="background"
+                  label="角色背景"
+                  placeholder="描述角色的背景故事，如职业、经历、专业领域等..."
+                  rules={[
+                    { required: true, message: '请描述角色的背景故事' },
+                    { max: 500, message: '角色背景不能超过500个字符' },
+                  ]}
+                  fieldProps={{
+                    rows: 4,
+                    showCount: true,
+                    maxLength: 500,
+                  }}
+                />
+
+                <ProFormSelect
+                  name="voiceStyle"
+                  label="声音模型"
+                  placeholder={voiceModelsLoading ? '加载中...' : '请选择声音模型'}
+                  options={voiceModels}
+                  rules={[{ required: true, message: '请选择声音模型' }]}
+                  fieldProps={{
+                    loading: voiceModelsLoading,
+                    disabled: voiceModelsLoading,
+                    optionRender: (option) => (
+                      <div>
+                        <div style={{ fontWeight: 500 }}>{option.label}</div>
+                        <div style={{ fontSize: '12px', color: '#666' }}>
+                          {option.data?.description || ''}
+                        </div>
+                      </div>
+                    ),
+                  }}
+                />
+
+                <ProFormTextArea
+                  name="quotes"
+                  label="开场白"
+                  placeholder="设置角色的开场白，多个开场白请用换行分隔..."
+                  tooltip="角色在开始对话时可能会说的话，可以设置多个，系统会随机选择"
+                  fieldProps={{
+                    rows: 3,
+                    showCount: true,
+                    maxLength: 300,
+                  }}
+                />
+              </ProForm>
             </Spin>
           </Card>
         </Col>
