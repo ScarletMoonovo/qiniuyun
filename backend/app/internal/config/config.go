@@ -31,6 +31,14 @@ type Config struct {
 	Embedding struct {
 		BaseURL string
 	}
+	Ali struct {
+		AccessKey string
+		SecretKey string
+	}
+	Qiniu struct {
+		AccessKey string
+		SecretKey string
+	}
 }
 
 type EmailService struct {

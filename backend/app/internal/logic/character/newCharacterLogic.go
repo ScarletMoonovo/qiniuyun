@@ -35,7 +35,7 @@ func (l *NewCharacterLogic) NewCharacter(req *types.NewCharacterRequest) (resp *
 		Background:  req.Background,
 		OpenLine:    req.OpenLine,
 		AvatarUrl:   req.Avatar,
-		Voice:       int64(req.Voice),
+		Voice:       req.Voice,
 		IsPublic:    castBool(req.IsPublic),
 	}
 	err = l.svcCtx.CharacterModel.Transaction(l.ctx, func(db *gorm.DB) error {
@@ -85,7 +85,9 @@ func (l *NewCharacterLogic) NewCharacter(req *types.NewCharacterRequest) (resp *
 			return
 		}
 	}()
-	return
+	return &types.NewCharacterResponse{
+		Character: castCharacter(character),
+	}, nil
 }
 
 func generateCharacterData(llm *llm.Client, req *types.NewCharacterRequest) (personality, memory []string, systemPrompt string, err error) {

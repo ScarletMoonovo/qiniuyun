@@ -2,13 +2,17 @@ package chat
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 	"github.com/sashabaranov/go-openai"
 	"github.com/zeromicro/go-zero/core/logx"
 	"gorm.io/gorm"
 	"log"
+	"net/http"
+	"net/url"
 	"qiniuyun/backend/app/internal/svc"
 	"qiniuyun/backend/app/internal/types"
 	"qiniuyun/backend/common/auth"
@@ -18,9 +22,14 @@ import (
 )
 
 const (
-	WSMessageTypeDelta   = "delta"
-	WSMessageTypeMessage = "message"
-	WSMessageTypeDone    = "done"
+	WSMessageResponseTypeDelta   = "delta"
+	WSMessageResponseTypeMessage = "message"
+	WSMessageResponseTypeDone    = "done"
+	WSMessageResponseTypeAudio   = "audio"
+
+	WSMessageRequestTypeText  = "text"
+	WSMessageRequestTypeVoice = "voice"
+	WSMessageRequestTypeAuth  = "auth"
 
 	RoleUser      = "user"
 	RoleAssistant = "assistant"
@@ -33,6 +42,7 @@ type wsResponse struct {
 	Type    string         `json:"type,omitempty"`
 	Msg     *model.Message `json:"msg,omitempty"`
 	Content string         `json:"content,omitempty"`
+	Audio   []byte         `json:"audio,omitempty"`
 }
 
 type ChatLogic struct {
@@ -40,6 +50,10 @@ type ChatLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 }
+
+var (
+	ttsUrl = url.URL{Scheme: "wss", Host: "openai.qiniu.com", Path: "/v1/voice/tts"}
+)
 
 func NewChatLogic(ctx context.Context, svcCtx *svc.ServiceContext) *ChatLogic {
 	return &ChatLogic{
@@ -52,7 +66,7 @@ func NewChatLogic(ctx context.Context, svcCtx *svc.ServiceContext) *ChatLogic {
 func (l *ChatLogic) Chat(req *types.ChatRequest, conn *websocket.Conn) error {
 	ctx := context.Background()
 	sessionId := req.SessionId
-	var authReq auth.WSAuthRequest
+	var authReq auth.WSRequest
 	_, c, err := conn.ReadMessage()
 	if err != nil {
 		logx.Error(err)
@@ -81,7 +95,7 @@ func (l *ChatLogic) Chat(req *types.ChatRequest, conn *websocket.Conn) error {
 	}
 	for _, msg := range historyMsgs {
 		conn.WriteJSON(wsResponse{
-			Type: WSMessageTypeMessage,
+			Type: WSMessageResponseTypeMessage,
 			Msg:  msg,
 		})
 	}
@@ -91,6 +105,9 @@ func (l *ChatLogic) Chat(req *types.ChatRequest, conn *websocket.Conn) error {
 			log.Println("read:", err)
 			break
 		}
+		var data auth.WSRequest
+		json.Unmarshal(content, &data)
+
 		historyMsgs = append(historyMsgs, &model.Message{
 			SessionId: sessionId,
 			Role:      RoleUser,
@@ -119,12 +136,27 @@ func (l *ChatLogic) Chat(req *types.ChatRequest, conn *websocket.Conn) error {
 				continue
 			}
 			fullReply += delta
-			conn.WriteJSON(wsResponse{
-				Type:    WSMessageTypeDelta,
-				Content: delta,
-			})
+			if data.Type == WSMessageRequestTypeText {
+				conn.WriteJSON(wsResponse{
+					Type:    WSMessageResponseTypeDelta,
+					Content: delta,
+				})
+			}
 		}
 		_ = stream.Close()
+		if data.Type == WSMessageRequestTypeVoice {
+			audioRes(fullReply, character.Voice, l.svcCtx.Config.LLM.ApiKey, conn)
+			if err := conn.WriteJSON(wsResponse{
+				Type: WSMessageResponseTypeMessage,
+				Msg: &model.Message{
+					SessionId: sessionId,
+					Role:      RoleAssistant,
+					Content:   fullReply,
+				},
+			}); err != nil {
+				logx.Error(err)
+			}
+		}
 		historyMsgs = append(historyMsgs, &model.Message{
 			SessionId: sessionId,
 			Role:      RoleAssistant,
@@ -152,7 +184,7 @@ func (l *ChatLogic) Chat(req *types.ChatRequest, conn *websocket.Conn) error {
 		}
 		for i := 0; i < 5; i++ {
 			if err := conn.WriteJSON(wsResponse{
-				Type: WSMessageTypeDone,
+				Type: WSMessageResponseTypeDone,
 			}); err != nil {
 				logx.Error(err)
 			}
@@ -186,4 +218,90 @@ func castHistory(messages []*model.Message, systemPrompt string, memory []string
 		})
 	}
 	return chatMessages
+}
+
+func audioRes(text, voiceType, sk string, conn *websocket.Conn) {
+	input := setupInput(voiceType, "mp3", 1.0, text)
+	c, _, err := websocket.DefaultDialer.Dial(ttsUrl.String(), http.Header{
+		"Authorization": []string{fmt.Sprintf("Bearer %s", sk)},
+		"VoiceType":     []string{voiceType},
+	})
+	if err != nil {
+		fmt.Println("dial err:", err)
+		return
+	}
+	defer c.Close()
+	err = c.WriteMessage(websocket.BinaryMessage, input)
+	if err != nil {
+		fmt.Println("write message fail, err:", err.Error())
+		return
+	}
+	count := 0
+	var audio []byte
+	for {
+		count++
+		var message []byte
+		_, message, err := c.ReadMessage()
+		if err != nil {
+			fmt.Println("read message fail, err:", err.Error())
+			break
+		}
+		var resp RelayTTSResponse
+		err = json.Unmarshal(message, &resp)
+		if err != nil {
+			fmt.Println("unmarshal fail, err:", err.Error())
+			continue
+		}
+		d, err := base64.StdEncoding.DecodeString(resp.Data)
+		if err != nil {
+			fmt.Println("decode fail, err:", err.Error())
+		}
+		audio = append(audio, d...)
+		if resp.Sequence < 0 {
+			fmt.Println("write to client")
+			conn.WriteJSON(wsResponse{
+				Type:  WSMessageResponseTypeAudio,
+				Audio: audio,
+			})
+			break
+		}
+	}
+}
+
+func setupInput(voiceType string, encoding string, speedRatio float64, text string) []byte {
+	params := &TTSRequest{
+		Audio: Audio{
+			VoiceType:  voiceType,
+			Encoding:   encoding,
+			SpeedRatio: speedRatio,
+		},
+		Request: Request{
+			Text: text,
+		},
+	}
+	resStr, _ := json.Marshal(params)
+	return resStr
+}
+
+type TTSRequest struct {
+	Audio   `json:"audio"`
+	Request `json:"request"`
+}
+type Audio struct {
+	VoiceType  string  `json:"voice_type"`
+	Encoding   string  `json:"encoding"`
+	SpeedRatio float64 `json:"speed_ratio"`
+}
+type Request struct {
+	Text string `json:"text"`
+}
+type RelayTTSResponse struct {
+	Reqid     string    `json:"reqid"`
+	Operation string    `json:"operation"`
+	Sequence  int       `json:"sequence"`
+	Data      string    `json:"data"`
+	Addition  *Addition `json:"addition,omitempty"`
+}
+type Addition struct {
+	Duration string `json:"duration"`
 }

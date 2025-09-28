@@ -30,7 +30,7 @@ type (
         Avatar string `json:"avatar"`
         Description string `json:"description"`
         OpenLine string `json:"open_line"`
-        Voice int `json:"voice"`
+        Voice string `json:"voice"`
         Tags []int64 `json:"tags"`
         IsPublic bool `json:"is_public"`
     }

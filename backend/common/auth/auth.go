@@ -49,7 +49,7 @@ func GetJwtToken(seconds, id int64, role int) (accessToken string, refreshToken 
 		return "", "", errors.Wrap(err, "accessToken created error")
 	}
 	refreshClaims := make(jwt.MapClaims)
-	refreshClaims["exp"] = time.Now().Unix() + 2*seconds
+	refreshClaims["exp"] = time.Now().Unix() + 3*seconds
 	refreshClaims["iat"] = time.Now().Unix()
 	refreshT := jwt.New(jwt.SigningMethodHS256)
 	refreshT.Claims = refreshClaims
@@ -119,11 +119,13 @@ func TokenMiddleware() rest.Middleware {
 	}
 }
 
-type WSAuthRequest struct {
-	Token string `json:"token"`
+type WSRequest struct {
+	Type    string `json:"type"`
+	Token   string `json:"token"`
+	Content string `json:"content"`
 }
 
-func ValidateWs(req WSAuthRequest) (int64, error) {
+func ValidateWs(req WSRequest) (int64, error) {
 	claim, err := ParseJwtToken(req.Token)
 	if err != nil {
 		return 0, err

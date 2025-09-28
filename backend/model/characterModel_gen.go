@@ -48,7 +48,7 @@ type (
 		Description   string         `gorm:"column:description"`
 		Background    string         `gorm:"column:background"`
 		OpenLine      string         `gorm:"column:open_line"`
-		Voice         int64          `gorm:"column:voice"`
+		Voice         string         `gorm:"column:voice"`
 		Personality   StringArray    `gorm:"column:personality"`
 		InitialMemory StringArray    `gorm:"column:initial_memory"`
 		SystemPrompt  string         `gorm:"column:system_prompt"`
