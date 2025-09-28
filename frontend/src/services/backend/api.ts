@@ -11,9 +11,13 @@ export async function getTags(options?: { [key: string]: any }) {
 }
 
 /** 此处后端没有提供注释 POST /api/upload/token */
-export async function uploadToken(options?: { [key: string]: any }) {
+export async function uploadToken(body: API.UploadTokenRequest, options?: { [key: string]: any }) {
   return request<API.UploadTokenResponse>('/api/upload/token', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
     ...(options || {}),
   });
 }

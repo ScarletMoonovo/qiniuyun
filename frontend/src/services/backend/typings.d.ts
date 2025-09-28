@@ -128,8 +128,14 @@ declare namespace API {
     name: string;
   };
 
+  type UploadTokenRequest = {
+    url: string;
+  };
+
   type UploadTokenResponse = {
+    url: string;
     token: string;
+    expire: number;
     key: string;
   };
 
