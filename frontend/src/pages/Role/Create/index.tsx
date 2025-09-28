@@ -80,7 +80,7 @@ const RoleCreate: React.FC = () => {
         avatar: avatar || '',
         description: values.description,
         open_line: values.openLine,
-        voice: values.voice,
+        voice: values.voice || 0,
         tags: values.tags || [],
         is_public: values.isPublic
       };
@@ -237,7 +237,7 @@ const RoleCreate: React.FC = () => {
                   label="声音模型"
                   placeholder={voiceModelsLoading ? '加载中...' : '请选择声音模型'}
                   options={voiceModels}
-                  rules={[{ required: true, message: '请选择声音模型' }]}
+                  rules={[{ required: false, message: '请选择声音模型' }]}
                   fieldProps={{
                     loading: voiceModelsLoading,
                     disabled: voiceModelsLoading,
