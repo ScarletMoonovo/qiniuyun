@@ -25,6 +25,15 @@ func NewGetCharacterLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetC
 }
 
 func (l *GetCharacterLogic) GetCharacter(req *types.GetCharacterRequest) (resp *types.GetCharacterResponse, err error) {
+	if req.UserId != 0 {
+		characters, err := l.svcCtx.CharacterModel.FindByQuery(l.ctx, 0, req.PageSize, map[string]interface{}{"user_id": req.UserId})
+		if err != nil {
+			return nil, err
+		}
+		return &types.GetCharacterResponse{
+			Characters: castCharacters(characters),
+		}, nil
+	}
 	if req.Tag == 0 {
 		characters, err := l.svcCtx.CharacterModel.GetRandom(l.ctx, req.PageSize)
 		if err != nil {

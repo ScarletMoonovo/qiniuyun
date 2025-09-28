@@ -150,6 +150,7 @@ type User struct {
 
 type GetCharacterRequest struct {
 	PageSize int64 `form:"page_size"`
+	UserId   int64 `form:"user_id,optional"`
 	Tag      int64 `form:"tag,optional"`
 }
 
