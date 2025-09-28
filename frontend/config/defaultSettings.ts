@@ -15,7 +15,7 @@ const Settings: ProLayoutProps & {
   fixedHeader: false,
   fixSiderbar: false, // 禁用侧边栏固定
   colorWeak: false,
-  title: 'AI角色聊天平台',
+  title: 'RoleTalk    一站式AI聊天',
   pwa: true,
   iconfontUrl: '',
   menu: {
