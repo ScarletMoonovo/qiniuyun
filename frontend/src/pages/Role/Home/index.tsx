@@ -167,176 +167,35 @@ const RoleHome: React.FC = () => {
   const loadMyRoles = async (page = 1) => {
     try {
       setLoading((prev) => ({ ...prev, myRoles: true }));
-      // TODO: 实现获取我的角色接口
-      // const response = await getMyRoles({
-      //   page,
-      //   pageSize: pagination.myRoles.pageSize,
-      // });
+      // 检查用户是否已登录
+      if (!currentUser?.id) {
+        console.warn('用户未登录，无法加载我的角色');
+        setMyRoles([]);
+        setPagination((prev) => ({
+          ...prev,
+          myRoles: {
+            ...prev.myRoles,
+            page: 1,
+            total: 0,
+            hasMore: false,
+          },
+        }));
+        return;
+      }
 
-      // 临时模拟数据 - 更多我的角色用于横向滚动展示
-      const mockMyRoles: API.Character[] = [
-        {
-          id: 1,
-          name: '我的AI助手',
-          avatar: '',
-          description: '这是我创建的第一个AI助手角色',
-          background: '专业的AI助手，能够帮助用户解决各种问题',
-          open_line: '你好，我是你的专属AI助手',
-          tags: ['助手', '智能', '专业'],
-          is_public: true,
-          user_id: 1,
-          created_at: Date.now() - 86400000,
-          updated_at: Date.now(),
-        },
-        {
-          id: 2,
-          name: '学习伙伴',
-          avatar: '',
-          description: '陪伴学习的AI角色',
-          background: '专注于教育和学习辅导的AI角色',
-          open_line: '让我们一起学习吧！',
-          tags: ['教育', '学习', '陪伴'],
-          is_public: false,
-          user_id: 1,
-          created_at: Date.now() - 172800000,
-          updated_at: Date.now(),
-        },
-        {
-          id: 3,
-          name: '创意写作师',
-          avatar: '',
-          description: '专业的创意写作和文案创作助手',
-          background: '擅长各种文体创作，包括小说、诗歌、广告文案等',
-          open_line: '让我帮你创作出精彩的文字作品！',
-          tags: ['创意', '写作', '文案'],
-          is_public: true,
-          user_id: 1,
-          created_at: Date.now() - 259200000,
-          updated_at: Date.now(),
-        },
-        {
-          id: 4,
-          name: '心理咨询师',
-          avatar: '',
-          description: '温暖贴心的心理健康顾问',
-          background: '提供情感支持和心理健康建议',
-          open_line: '我在这里倾听你的心声，陪伴你度过难关',
-          tags: ['心理', '咨询', '情感'],
-          is_public: false,
-          user_id: 1,
-          created_at: Date.now() - 345600000,
-          updated_at: Date.now(),
-        },
-        {
-          id: 5,
-          name: '编程导师',
-          avatar: '',
-          description: '专业的编程技术指导老师',
-          background: '精通多种编程语言，能够提供代码审查和技术指导',
-          open_line: '让我们一起探索编程的奥秘！',
-          tags: ['编程', '技术', '教学'],
-          is_public: true,
-          user_id: 1,
-          created_at: Date.now() - 432000000,
-          updated_at: Date.now(),
-        },
-        {
-          id: 6,
-          name: '健身教练',
-          avatar: '',
-          description: '专业的健身指导和营养建议师',
-          background: '制定个性化健身计划，提供营养搭配建议',
-          open_line: '准备好开始你的健康之旅了吗？',
-          tags: ['健身', '营养', '健康'],
-          is_public: true,
-          user_id: 1,
-          created_at: Date.now() - 518400000,
-          updated_at: Date.now(),
-        },
-        {
-          id: 7,
-          name: '美食专家',
-          avatar: '',
-          description: '精通各国料理的美食顾问',
-          background: '分享烹饪技巧，推荐美食搭配，传授料理秘诀',
-          open_line: '今天想尝试什么美味呢？',
-          tags: ['美食', '烹饪', '料理'],
-          is_public: false,
-          user_id: 1,
-          created_at: Date.now() - 604800000,
-          updated_at: Date.now(),
-        },
-        {
-          id: 8,
-          name: '旅行规划师',
-          avatar: '',
-          description: '专业的旅行路线规划和攻略制定',
-          background: '熟悉全球各地旅游资源，提供个性化旅行建议',
-          open_line: '让我为你规划一次难忘的旅程！',
-          tags: ['旅行', '规划', '攻略'],
-          is_public: true,
-          user_id: 1,
-          created_at: Date.now() - 691200000,
-          updated_at: Date.now(),
-        },
-        {
-          id: 9,
-          name: '投资顾问',
-          avatar: '',
-          description: '理财投资和财务规划专家',
-          background: '提供投资建议，分析市场趋势，制定理财计划',
-          open_line: '让我帮你实现财务自由的目标！',
-          tags: ['投资', '理财', '金融'],
-          is_public: false,
-          user_id: 1,
-          created_at: Date.now() - 777600000,
-          updated_at: Date.now(),
-        },
-        {
-          id: 10,
-          name: '设计师助手',
-          avatar: '',
-          description: '创意设计和视觉艺术指导',
-          background: '擅长UI/UX设计、平面设计、品牌视觉等领域',
-          open_line: '让我们一起创造美丽的视觉作品！',
-          tags: ['设计', '创意', '艺术'],
-          is_public: true,
-          user_id: 1,
-          created_at: Date.now() - 864000000,
-          updated_at: Date.now(),
-        },
-        {
-          id: 11,
-          name: '语言学习伙伴',
-          avatar: '',
-          description: '多语言学习和交流练习助手',
-          background: '支持英语、日语、韩语等多种语言学习',
-          open_line: 'Hello! 今天想练习哪种语言呢？',
-          tags: ['语言', '学习', '交流'],
-          is_public: true,
-          user_id: 1,
-          created_at: Date.now() - 950400000,
-          updated_at: Date.now(),
-        },
-        {
-          id: 12,
-          name: '音乐制作人',
-          avatar: '',
-          description: '音乐创作和制作指导专家',
-          background: '精通音乐理论，擅长各种风格的音乐创作',
-          open_line: '让我们一起创作动人的旋律！',
-          tags: ['音乐', '创作', '制作'],
-          is_public: false,
-          user_id: 1,
-          created_at: Date.now() - 1036800000,
-          updated_at: Date.now(),
-        },
-      ];
+      // 使用真实API获取用户创建的角色
+      const response = await getCharacter({
+        user_id: currentUser.id,
+        page_size: pagination.myRoles.pageSize,
+      });
+
+      const userRoles = response.characters || [];
+
 
       if (page === 1) {
-        setMyRoles(mockMyRoles);
+        setMyRoles(userRoles);
       } else {
-        setMyRoles((prev) => [...prev, ...mockMyRoles]);
+        setMyRoles((prev) => [...prev, ...userRoles]);
       }
 
       setPagination((prev) => ({
@@ -344,13 +203,17 @@ const RoleHome: React.FC = () => {
         myRoles: {
           ...prev.myRoles,
           page,
-          total: mockMyRoles.length,
-          hasMore: false,
+          total: userRoles.length,
+          hasMore: userRoles.length === pagination.myRoles.pageSize, // 如果返回的数量等于页面大小，可能还有更多数据
         },
       }));
     } catch (error: any) {
       console.error('加载我的角色失败:', error);
       message.error('加载我的角色失败');
+      // 出错时设置空数组
+      if (page === 1) {
+        setMyRoles([]);
+      }
     } finally {
       setLoading((prev) => ({ ...prev, myRoles: false }));
     }
@@ -384,6 +247,7 @@ const RoleHome: React.FC = () => {
             tags: ['客服', '专业', '耐心', '沟通'],
             is_public: true,
             user_id: 2,
+            user_name: '张三',
             created_at: Date.now() - 259200000,
             updated_at: Date.now(),
           },
@@ -397,6 +261,7 @@ const RoleHome: React.FC = () => {
             tags: ['创意', '写作', '文案', '灵感'],
             is_public: true,
             user_id: 3,
+            user_name: '李四',
             created_at: Date.now() - 345600000,
             updated_at: Date.now(),
           },
@@ -410,6 +275,7 @@ const RoleHome: React.FC = () => {
             tags: ['心理', '咨询', '温暖', '倾听'],
             is_public: true,
             user_id: 4,
+            user_name: '王五',
             created_at: Date.now() - 432000000,
             updated_at: Date.now(),
           },
@@ -423,6 +289,7 @@ const RoleHome: React.FC = () => {
             tags: ['教育', '学习', '指导', '知识'],
             is_public: true,
             user_id: 5,
+            user_name: '赵六',
             created_at: Date.now() - 518400000,
             updated_at: Date.now(),
           },
@@ -436,6 +303,7 @@ const RoleHome: React.FC = () => {
             tags: ['编程', '技术', '代码', '调试'],
             is_public: true,
             user_id: 6,
+            user_name: '孙七',
             created_at: Date.now() - 604800000,
             updated_at: Date.now(),
           },
@@ -449,6 +317,7 @@ const RoleHome: React.FC = () => {
             tags: ['生活', '建议', '实用', '贴心'],
             is_public: true,
             user_id: 7,
+            user_name: '周八',
             created_at: Date.now() - 691200000,
             updated_at: Date.now(),
           },
@@ -462,6 +331,7 @@ const RoleHome: React.FC = () => {
             tags: ['健身', '运动', '健康', '指导'],
             is_public: true,
             user_id: 8,
+            user_name: '吴九',
             created_at: Date.now() - 777600000,
             updated_at: Date.now(),
           },
@@ -475,6 +345,7 @@ const RoleHome: React.FC = () => {
             tags: ['美食', '烹饪', '文化', '分享'],
             is_public: true,
             user_id: 9,
+            user_name: '郑十',
             created_at: Date.now() - 864000000,
             updated_at: Date.now(),
           }
@@ -1265,7 +1136,7 @@ const RoleHome: React.FC = () => {
                       color: '#999',
                     }}
                   >
-                    创建者: 用户{role.user_id}
+                    {role.user_name}
                   </div>
                 )}
               </Card>

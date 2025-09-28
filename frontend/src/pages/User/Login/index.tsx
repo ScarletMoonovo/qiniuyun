@@ -112,7 +112,7 @@ const Login: React.FC = () => {
           }}
           logo={<img alt="logo" style={{ height: '100%' }} src="/logo.svg" />}
           title="Role Talk"
-          subTitle={'AI角色聊天平台'}
+          subTitle={'RoleTalk    一站式AI聊天'}
           initialValues={{
             autoLogin: true,
           }}

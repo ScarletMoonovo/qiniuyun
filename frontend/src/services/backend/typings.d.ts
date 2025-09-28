@@ -17,6 +17,7 @@ declare namespace API {
     tags: string[];
     is_public: boolean;
     user_id: number;
+    user_name: string;
     created_at: number;
     updated_at: number;
   };
@@ -27,6 +28,7 @@ declare namespace API {
 
   type getCharacterParams = {
     page_size: number;
+    user_id?: number;
     tag?: number;
   };
 
@@ -79,7 +81,7 @@ declare namespace API {
     avatar: string;
     description: string;
     open_line: string;
-    voice: number;
+    voice: string;
     tags: number[];
     is_public: boolean;
   };
@@ -129,7 +131,8 @@ declare namespace API {
   };
 
   type UploadTokenRequest = {
-    url: string;
+    url?: string;
+    key?: string;
   };
 
   type UploadTokenResponse = {

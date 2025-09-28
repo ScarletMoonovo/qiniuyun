@@ -73,7 +73,7 @@ export default defineConfig({
    * @name layout 插件
    * @doc https://umijs.org/docs/max/layout-menu
    */
-  title: 'Moon前端万用模板',
+  title: 'RoleTalk    一站式AI聊天',
   layout: {
     locale: true,
     ...defaultSettings,
@@ -129,7 +129,7 @@ export default defineConfig({
   openAPI: [
     {
       requestLibPath: "import { request } from '@umijs/max'",
-      schemaPath: 'http://127.0.0.1:4523/export/openapi/20?version=3.0',
+      schemaPath: 'http://127.0.0.1:4523/export/openapi/21?version=3.0',
       projectName: 'backend',
     },
   ],
