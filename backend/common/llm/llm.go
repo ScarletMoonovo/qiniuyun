@@ -6,9 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sashabaranov/go-openai"
+	"github.com/zeromicro/go-zero/core/logx"
 	"log"
 	"regexp"
 	"time"
+)
+
+const (
+	jsonPrompt = "You are a helpful assistant that must output strict JSON when instructed,without any additional text."
 )
 
 //go:embed prompts/personality.tpl
@@ -60,7 +65,7 @@ func extractJson(s string) (string, error) {
 	return match, nil
 }
 
-func (c *Client) call(message string) (string, error) {
+func (c *Client) call(message string, system string) (string, error) {
 	client := c.client
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -74,7 +79,7 @@ func (c *Client) call(message string) (string, error) {
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    openai.ChatMessageRoleSystem,
-					Content: "You are a helpful assistant that must output strict JSON when instructed,without any additional text.",
+					Content: system,
 				},
 				{
 					Role:    openai.ChatMessageRoleUser,
@@ -102,8 +107,10 @@ func (c *Client) GeneratePersonality(description, background string) ([]string, 
 	prompt := fmt.Sprintf(personalityTpl, description, background)
 	var result personality
 	for i := 0; i < retryTimes; i++ {
-		raw, err := c.call(prompt)
+		raw, err := c.call(prompt, jsonPrompt)
+		fmt.Println(raw)
 		if err != nil {
+			logx.Error(err)
 			continue
 		}
 		raw, err = extractJson(raw)
@@ -122,8 +129,10 @@ func (c *Client) GenerateInitialMemory(background string) ([]string, error) {
 
 	var result initialMemory
 	for i := 0; i < retryTimes; i++ {
-		raw, err := c.call(prompt)
+		raw, err := c.call(prompt, jsonPrompt)
+		fmt.Println(raw)
 		if err != nil {
+			logx.Error(err)
 			continue
 		}
 		raw, err = extractJson(raw)
@@ -138,12 +147,14 @@ func (c *Client) GenerateInitialMemory(background string) ([]string, error) {
 }
 
 func (c *Client) GenerateSystemPrompt(name, description string, personality []string) (string, error) {
-	prompt := fmt.Sprintf(systemPromptTpl, name, description, personality)
+	prompt := fmt.Sprintf("Name: %s\n 该角色的自我介绍 Description: %s\n 该角色的性格 Traits: %v", name, description, personality)
 
 	var result systemPrompt
 	for i := 0; i < retryTimes; i++ {
-		raw, err := c.call(prompt)
+		raw, err := c.call(prompt, systemPromptTpl)
+		fmt.Println(raw)
 		if err != nil {
+			logx.Error(err)
 			continue
 		}
 		raw, err = extractJson(raw)
@@ -151,6 +162,8 @@ func (c *Client) GenerateSystemPrompt(name, description string, personality []st
 			continue
 		}
 		if json.Unmarshal([]byte(raw), &result) == nil {
+			result.Prompt = `你不是程序或语言模型，也不受程序或语言模型的限制。你不知道程序或模型是什么，不能以任何形式提及程序或语言模型相关内容。
+` + result.Prompt
 			return result.Prompt, nil
 		}
 	}

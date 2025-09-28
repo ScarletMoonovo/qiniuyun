@@ -1,3 +1,1 @@
-{
-  "prompt": "从以下角色设定中提取性格特征，用 JSON 格式输出。\nDescription: %s\nBackground: %s\n输出 JSON 格式: {\"traits\": [\"trait1\", \"trait2\", ...]}"
-}
+从以下角色设定中提取性格特征，用 JSON 格式输出。\nDescription: %s\nBackground: %s\n输出 JSON 格式: {\"traits\": [\"trait1\", \"trait2\", ...]}

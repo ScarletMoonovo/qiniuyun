@@ -78,7 +78,7 @@ type NewCharacterRequest struct {
 	Avatar      string  `json:"avatar"`
 	Description string  `json:"description"`
 	OpenLine    string  `json:"open_line"`
-	Voice       int     `json:"voice"`
+	Voice       string  `json:"voice"`
 	Tags        []int64 `json:"tags"`
 	IsPublic    bool    `json:"is_public"`
 }
@@ -127,9 +127,16 @@ type Tag struct {
 	Name string `json:"name"`
 }
 
+type UploadTokenRequest struct {
+	Url string `json:"url,optional"`
+	Key string `json:"key,optional"`
+}
+
 type UploadTokenResponse struct {
-	Token string `json:"token"`
-	Key   string `json:"key"`
+	Url    string `json:"url"`
+	Token  string `json:"token"`
+	Expire int64  `json:"expire"`
+	Key    string `json:"key"`
 }
 
 type User struct {

@@ -15,8 +15,14 @@ type (
 
 // 生成上传token
 type (
+    UploadTokenRequest {
+        Url string `json:"url,optional"`
+        Key string `json:"key,optional"`
+    }
     UploadTokenResponse {
+        Url string `json:"url"`
         Token string `json:"token"`
+        Expire int64 `json:"expire"`
         Key string `json:"key"`
     }
 )
@@ -28,7 +34,7 @@ type (
 
 service api {
     @handler uploadToken      //生成客户端上传凭证
-    post /upload/token returns (UploadTokenResponse)
+    post /upload/token (UploadTokenRequest) returns (UploadTokenResponse)
     @handler getUserTags
     get /user/tags returns ([]Tag)
 }

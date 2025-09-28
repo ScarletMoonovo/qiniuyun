@@ -1,18 +1,18 @@
-package handler
+package character
 
 import (
 	"net/http"
 	"qiniuyun/backend/common/response"
 
 	"github.com/zeromicro/go-zero/rest/httpx"
-	"qiniuyun/backend/app/internal/logic"
+	"qiniuyun/backend/app/internal/logic/character"
 	"qiniuyun/backend/app/internal/svc"
 	"qiniuyun/backend/app/internal/types"
 )
 
-func uploadTokenHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+func GetCharacterHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var req types.UploadTokenRequest
+		var req types.GetCharacterRequest
 		if err := httpx.Parse(r, &req); err != nil {
 			response.ParamErrorResult(r, w, err)
 			return
@@ -24,8 +24,8 @@ func uploadTokenHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			return
 		}
 
-		l := logic.NewUploadTokenLogic(r.Context(), svcCtx)
-		resp, err := l.UploadToken(&req)
+		l := character.NewGetCharacterLogic(r.Context(), svcCtx)
+		resp, err := l.GetCharacter(&req)
 		response.Response(r, w, resp, err)
 	}
 }

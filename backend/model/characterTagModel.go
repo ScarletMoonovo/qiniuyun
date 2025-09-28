@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/zeromicro/go-zero/core/stores/cache"
 	"gorm.io/gorm"
+	"math/rand"
 )
 
 var _ CharacterTagModel = (*customCharacterTagModel)(nil)
@@ -23,13 +24,6 @@ type (
 
 	customCharacterTagLogicModel interface {
 	}
-)
-
-var (
-	characterTagRandomSql = `SELECT character_id
-FROM character_tag
-WHERE tag_id = ?
-LIMIT 1 OFFSET FLOOR(RAND() * (SELECT COUNT(*) FROM character_tag WHERE tag_id = ?))`
 )
 
 // NewCharacterTagModel returns a model for the database table.
@@ -98,25 +92,35 @@ func (m *defaultCharacterTagModel) Inserts(ctx context.Context, tx *gorm.DB, dat
 
 func (m *defaultCharacterTagModel) GetRandom(ctx context.Context, n, tagId int64) ([]*CharacterTag, error) {
 	var resp []*CharacterTag
-	idSet := make(map[int64]struct{})
-	err := m.QueryNoCacheCtx(ctx, &resp, func(conn *gorm.DB, v interface{}) error {
-		count := int64(0)
-		for i := int64(0); count < n && i < n+3; i++ {
-			var rsp CharacterTag
-			err := conn.Raw(characterTagRandomSql, tagId).Scan(&rsp).Error
-			if err != nil {
-				return err
-			}
-			if _, exists := idSet[rsp.Id]; !exists {
-				idSet[rsp.Id] = struct{}{}
-				resp = append(resp, &rsp)
-				count++
-			}
-		}
-		return nil
+	uniqueIds := make(map[int64]struct{})
+	var count int64
+
+	err := m.QueryNoCacheCtx(ctx, nil, func(db *gorm.DB, v interface{}) error {
+		return db.Model(&CharacterTag{}).Where("tag_id = ?", tagId).Count(&count).Error
 	})
 	if err != nil {
 		return nil, err
+	}
+	if count == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	for i := int64(0); int64(len(uniqueIds)) < n && i < n+3; i++ {
+		offset := rand.Intn(int(count))
+		var result CharacterTag
+		err := m.QueryNoCacheCtx(ctx, nil, func(db *gorm.DB, v interface{}) error {
+			return db.Where("tag_id = ?", tagId).
+				Offset(offset).
+				Limit(1).
+				First(&result).Error
+		})
+		if err != nil {
+			return nil, err
+		}
+		if _, exists := uniqueIds[result.CharacterId]; !exists {
+			uniqueIds[result.CharacterId] = struct{}{}
+			resp = append(resp, &result)
+		}
 	}
 	return resp, nil
 }
