@@ -34,7 +34,22 @@ EmailService:
   Username: "user"
   Host: "example@email.com"
 
+Qdrant:
+  Host: "127.0.0.1"
+  Port: 6334
+
 LLM:
   ApiKey: ""
   BaseURL: ""
-  Model: "deepseek-v3.1"
+  Model: ""
+
+Embedding:
+  BaseURL: "http://127.0.0.1:5000"
+
+Ali:
+  AccessKey: ""
+  SecretKey: ""
+
+Qiniu:
+  AccessKey: ""
+  SecretKey: ""
