@@ -42,6 +42,7 @@ type (
 type (
     getCharacterRequest {
         pageSize int64 `form:"page_size"`
+        UserId int64 `form:"user_id,optional"`
         Tag int64 `form:"tag,optional"`
     }
     getCharacterResponse {
