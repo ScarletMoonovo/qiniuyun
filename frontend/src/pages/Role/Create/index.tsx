@@ -242,12 +242,12 @@ const RoleCreate: React.FC = () => {
                   placeholder="请简单介绍一下这个角色..."
                   rules={[
                     { required: true, message: '请输入角色介绍' },
-                    { max: 200, message: '角色介绍不能超过200个字符' },
+                    { max: 1000, message: '角色介绍不能超过1000个字符' },
                   ]}
                   fieldProps={{
                     rows: 3,
                     showCount: true,
-                    maxLength: 200,
+                    maxLength: 1000,
                   }}
                 />
 
@@ -259,7 +259,7 @@ const RoleCreate: React.FC = () => {
                   fieldProps={{
                     rows: 3,
                     showCount: true,
-                    maxLength: 300,
+                    maxLength: 1000,
                   }}
                 />
 
@@ -324,12 +324,12 @@ const RoleCreate: React.FC = () => {
                   placeholder="描述角色的背景故事，如职业、经历、专业领域等..."
                   rules={[
                     { required: true, message: '请描述角色的背景故事' },
-                    { max: 500, message: '角色背景不能超过500个字符' },
+                    { max: 1000, message: '角色背景不能超过1000个字符' },
                   ]}
                   fieldProps={{
                     rows: 4,
                     showCount: true,
-                    maxLength: 500,
+                    maxLength: 1000,
                   }}
                 />
 
