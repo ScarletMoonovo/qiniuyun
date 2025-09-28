@@ -48,6 +48,62 @@ const AIChat: React.FC = () => {
   const urlParams = new URLSearchParams(location.search);
   const oldSessionId = urlParams.get('sessionId');
   const [messages, setMessages] = useState<ShowMessage[]>([]);
+
+  // 播放音频数据的函数，支持base64字符串和ArrayBuffer
+  const playBase64Audio = async (audioData: string | ArrayBuffer): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      try {
+        let audioBlob: Blob;
+
+        if (audioData instanceof ArrayBuffer) {
+          // 如果是ArrayBuffer，直接创建Blob
+          audioBlob = new Blob([audioData], { type: 'audio/mpeg' });
+        } else {
+          // 如果是base64字符串，先转换为二进制数据
+          let cleanBase64 = audioData;
+          if (audioData.startsWith('data:')) {
+            cleanBase64 = audioData.split(',')[1];
+          }
+
+          // 将base64转换为二进制数据
+          const binaryString = window.atob(cleanBase64);
+          const bytes = new Uint8Array(binaryString.length);
+          for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+          }
+
+          audioBlob = new Blob([bytes], { type: 'audio/mpeg' });
+        }
+        
+        // 创建URL并播放
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+
+        // 设置播放事件监听
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl); // 清理URL对象
+          resolve();
+        };
+
+        audio.onerror = (error) => {
+          URL.revokeObjectURL(audioUrl); // 清理URL对象
+          console.error('音频播放错误:', error);
+          reject(new Error('音频播放失败'));
+        };
+
+        // 开始播放
+        audio.play().catch((error) => {
+          URL.revokeObjectURL(audioUrl); // 清理URL对象
+          console.error('音频播放失败:', error);
+          reject(error);
+        });
+
+      } catch (error) {
+        console.error('音频数据解码失败:', error);
+        reject(error);
+      }
+    });
+  };
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<number | null>(
@@ -349,20 +405,19 @@ const AIChat: React.FC = () => {
       } else if (type === 'audio' && audio) {
         // 处理语音数据
         console.log('收到语音数据:', audio);
-        try {
-          // 这里可以添加播放音频的逻辑
-          // 例如：创建AudioContext，播放ArrayBuffer格式的音频数据
-          // const audioContext = new AudioContext();
-          // const audioBuffer = await audioContext.decodeAudioData(audio);
-          // const source = audioContext.createBufferSource();
-          // source.buffer = audioBuffer;
-          // source.connect(audioContext.destination);
-          // source.start();
-          
-          message.info('收到语音回复');
-        } catch (error) {
-          console.error('处理语音数据失败:', error);
-        }
+        
+        // 异步处理音频播放
+        const handleAudioPlayback = async () => {
+          try {
+            await playBase64Audio(audio);
+            message.info('收到语音回复');
+          } catch (error) {
+            console.error('处理语音数据失败:', error);
+            message.error('语音播放失败');
+          }
+        };
+        
+        handleAudioPlayback();
       }
     }
     //   }, [lastMessage, handleStreamingUpdate]);
